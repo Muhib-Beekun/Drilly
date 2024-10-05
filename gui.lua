@@ -29,6 +29,17 @@ function gui.create_gui(player)
         style = "dropdown",  -- Using the default dropdown style
     }
     surface_dropdown.style.width = 180  -- Set a custom width for the dropdown
+    surface_dropdown.style.height = 30  -- Set height to 30 to match the button
+
+    -- Add all available surfaces to the dropdown
+    local index_counter = 2
+    for _, surface in pairs(game.surfaces) do
+        surface_dropdown.add_item(surface.name)
+        if surface.name == player.surface.name then
+            surface_dropdown.selected_index = index_counter -- Select the current surface by default
+        end
+        index_counter = index_counter + 1
+    end
 
     -- Add a green refresh icon button next to the dropdown and set its width smaller
     local refresh_button = header_flow.add{
@@ -82,22 +93,25 @@ function gui.update_drill_count(player)
         local drill_data = drill_utils.get_drill_data(surface)
 
         for resource_name, resource_data in pairs(resources) do
+            -- Create a horizontal flow for each resource and its associated drills
+            local resource_line = resource_flow.add{type = "flow", direction = "horizontal"}
+
             -- Determine if the resource is an item or entity, then set the sprite type
             local sprite_type = game.item_prototypes[resource_name] and "item" or "entity"
             local sprite = sprite_type .. "/" .. resource_name
 
             -- Add resource sprite with the amount and set tooltip
-            resource_flow.add{
+            resource_line.add{
                 type = "sprite-button",
                 sprite = sprite,
                 number = resource_data.total_amount,
                 tooltip = resource_name .. ": " .. resource_data.total_amount  -- Tooltip with resource name and count
             }
 
-            -- Add drill sprites for each drill type mining this resource and set tooltips
+            -- Add drill sprites for each drill type mining this resource, next to the resource icon
             if drill_data[resource_name] then
                 for drill_type, count in pairs(drill_data[resource_name]) do
-                    resource_flow.add{
+                    resource_line.add{
                         type = "sprite-button",
                         sprite = "entity/" .. drill_type,
                         number = count,
