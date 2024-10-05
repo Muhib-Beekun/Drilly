@@ -9,12 +9,22 @@ function gui.create_gui(player)
         player.gui.top.drill_inspector_frame.destroy()
     end
 
-    -- Create the main frame
-    local frame = player.gui.top.add{type = "frame", name = "drill_inspector_frame", caption = "Drill Inspector"}
-    
+    -- Create the main frame with a grey background (proper frame element)
+    local main_frame = player.gui.top.add{
+        type = "frame", 
+        direction = "vertical", 
+        name = "drill_inspector_frame", 
+        caption = "Drilly"
+    }
+
+    -- Create a flow for the header (title, dropdown, and refresh icon)
+    local header_flow = main_frame.add{type = "flow", direction = "horizontal"}
+
+    -- Add title "Drilly"
+    header_flow.add{type = "label", caption = "Drilly", style = "heading_1_label"}
+
     -- Add surface dropdown with an "All" option and default to the current surface
-    local dropdown_flow = frame.add{type = "flow", direction = "horizontal"}
-    local surface_dropdown = dropdown_flow.add{type = "drop-down", name = "surface_dropdown", items = {"All"}, selected_index = 1}
+    local surface_dropdown = header_flow.add{type = "drop-down", name = "surface_dropdown", items = {"All"}, selected_index = 1}
 
     -- Add all available surfaces to the dropdown
     local index_counter = 2
@@ -26,11 +36,11 @@ function gui.create_gui(player)
         index_counter = index_counter + 1
     end
 
-    -- Add a refresh button next to the dropdown
-    dropdown_flow.add{type = "button", name = "refresh_button", caption = "Refresh"}
+    -- Add a refresh icon button next to the dropdown
+    header_flow.add{type = "sprite-button", name = "refresh_button", sprite = "utility/refresh", tooltip = "Refresh"}
 
-    -- Create a vertical layout for the resource table
-    local resource_flow = frame.add{type = "flow", direction = "vertical"}
+    -- Create a vertical layout for the resource table within the frame
+    local resource_flow = main_frame.add{type = "flow", direction = "vertical"}
 
     -- Fetch and display mined resources for the current surface
     gui.update_drill_count(player)
@@ -38,17 +48,17 @@ end
 
 -- Function to update the drill count for all resources and drill types
 function gui.update_drill_count(player)
-    local frame = player.gui.top.drill_inspector_frame
-    if not frame then
-        player.print("Error: Drill inspector frame not found.")
+    local main_frame = player.gui.top.drill_inspector_frame
+    if not main_frame then
+        player.print("Error: Drilly frame not found.")
         return
     end
 
-    local dropdown_flow = frame.children[1]
-    local surface_dropdown = dropdown_flow.children[1]
+    local header_flow = main_frame.children[1] -- Header is the first child
+    local surface_dropdown = header_flow.children[2] -- Dropdown is the second child
     local selected_surface_name = surface_dropdown.get_item(surface_dropdown.selected_index)
 
-    local resource_flow = frame.children[2]
+    local resource_flow = main_frame.children[2] -- Resource flow is the second item after the header
 
     -- Determine the surface(s) to inspect
     local surfaces_to_check = {}
