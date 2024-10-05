@@ -11,32 +11,58 @@ function gui.create_gui(player)
 
     -- Create the main frame
     local frame = player.gui.top.add{type = "frame", name = "drill_inspector_frame", caption = "Drill Inspector"}
-    local dropdown_flow = frame.add{type = "flow", direction = "horizontal"}
+    local resource_table = frame.add{type = "table", column_count = 4}  -- Create a grid layout
 
-    -- Add surface dropdown with an explicit name
-    local surface_dropdown = dropdown_flow.add{type = "drop-down", name = "surface_dropdown", items = {}}
-    for _, surface in pairs(game.surfaces) do
-        surface_dropdown.add_item(surface.name)
+    -- Fetch all resources and drill data to display in the GUI
+    local resources = drill_utils.get_all_resources(player.surface)
+    local drill_data = drill_utils.get_drill_data(player.surface)
+
+    -- Ensure resources and drill_data are not nil
+    if not resources then
+        player.print("Error: No resources found.")
+        return
+    end
+    if not drill_data then
+        player.print("Error: No drill data found.")
+        return
     end
 
-    -- Add resource type dropdown with an explicit name
-    local resource_dropdown = dropdown_flow.add{type = "drop-down", name = "resource_dropdown", items = {}}
-    for _, resource in pairs(game.entity_prototypes) do
-        if resource.type == "resource" then
-            resource_dropdown.add_item(resource.name)
+    -- Loop through each resource and add its sprite and drill counts to the table
+    for resource_name, resource_data in pairs(resources) do
+        -- Determine if the resource is an item or entity, then set the sprite type
+        local sprite_type = game.item_prototypes[resource_name] and "item" or "entity"
+        local sprite = sprite_type .. "/" .. resource_name
+
+        -- Add resource sprite with the amount
+        resource_table.add{
+            type = "sprite-button",
+            sprite = sprite,  -- Display the resource image (entity or item)
+            number = resource_data.total_amount  -- Add number to indicate total amount
+        }
+
+        -- Add drill sprites for each drill type mining this resource
+        if drill_data[resource_name] then
+            for drill_type, count in pairs(drill_data[resource_name]) do
+                resource_table.add{
+                    type = "sprite-button",
+                    sprite = "entity/" .. drill_type,  -- Display the dynamic drill image
+                    number = count  -- Display the number of drills mining this resource
+                }
+            end
         end
+
+        -- Optionally add a label for resource type and drill count
+        resource_table.add{
+            type = "label",
+            caption = resource_name .. " being mined by drills of different types"
+        }
     end
 
-    -- Add a refresh button
-    frame.add{type = "button", name = "refresh_button", caption = "Refresh"}
-
-    -- Add a label to display the count
-    frame.add{type = "label", name = "drill_count_label", caption = "Drills mining: 0"}
-
+    -- Debugging: Print confirmation of GUI creation
     player.print("Drill Inspector GUI created.")
 end
 
--- Function to update the drill count for the selected resource and surface
+-- Function to update the drill count for all resources and drill types
 function gui.update_drill_count(player)
     local frame = player.gui.top.drill_inspector_frame
     if not frame then
@@ -44,20 +70,54 @@ function gui.update_drill_count(player)
         return
     end
 
-    local dropdown_flow = frame.children[1]
-    local surface_dropdown = dropdown_flow.children[1]
-    local resource_dropdown = dropdown_flow.children[2]
+    local resource_table = frame.children[1]
 
-    local surface_name = surface_dropdown.get_item(surface_dropdown.selected_index)
-    local resource_name = resource_dropdown.get_item(resource_dropdown.selected_index)
+    -- Fetch updated resource and drill data
+    local resources = drill_utils.get_all_resources(player.surface)
+    local drill_data = drill_utils.get_drill_data(player.surface)
 
-    if not surface_name or not resource_name then
-        player.print("Please select a surface and resource.")
+    -- Ensure resources and drill_data are not nil
+    if not resources then
+        player.print("Error: No resources found.")
+        return
+    end
+    if not drill_data then
+        player.print("Error: No drill data found.")
         return
     end
 
-    local drill_count = drill_utils.count_drills_on_surface(game.surfaces[surface_name], resource_name)
-    frame.drill_count_label.caption = "Drills mining: " .. drill_count
+    -- Clear the table and rebuild it with updated data
+    resource_table.clear()
+
+    for resource_name, resource_data in pairs(resources) do
+        -- Determine if the resource is an item or entity, then set the sprite type
+        local sprite_type = game.item_prototypes[resource_name] and "item" or "entity"
+        local sprite = sprite_type .. "/" .. resource_name
+
+        -- Update resource sprite with amount
+        resource_table.add{
+            type = "sprite-button",
+            sprite = sprite,
+            number = resource_data.total_amount
+        }
+
+        -- Update drill sprites with drill type and drill count
+        if drill_data[resource_name] then
+            for drill_type, count in pairs(drill_data[resource_name]) do
+                resource_table.add{
+                    type = "sprite-button",
+                    sprite = "entity/" .. drill_type,
+                    number = count
+                }
+            end
+        end
+
+        -- Optionally add a label for resource and drill count
+        resource_table.add{
+            type = "label",
+            caption = resource_name .. " being mined by drills of different types"
+        }
+    end
 end
 
 return gui
