@@ -56,18 +56,34 @@ local function inspect_drill(player)
             color = {r = 1, g = 0.5, b = 0}
         }
 
-        -- Get the mining target of the drill
-        local mining_target = drill.mining_target
+        -- Find resources in the bounding box
+        local resources = drill.surface.find_entities_filtered{
+            area = bounding_box,
+            type = "resource"
+        }
 
-        if mining_target then
-            local resource_name = mining_target.name
-            local resource_amount = format_number_with_commas(mining_target.amount)
+        -- Summarize resources found in the drill's mining area
+        local resource_summary = {}
+        for _, resource in pairs(resources) do
+            if resource_summary[resource.name] then
+                resource_summary[resource.name].amount = resource_summary[resource.name].amount + resource.amount
+                if not resource_summary[resource.name].drills then
+                    resource_summary[resource.name].drills = {}
+                end
+                resource_summary[resource.name].drills[drill.unit_number] = true
+            else
+                resource_summary[resource.name] = {amount = resource.amount, drills = {[drill.unit_number] = true}}
+            end
+        end
 
-            -- Output the drill's mining information
-            player.print("The drill is currently mining: " .. resource_name)
-            player.print("Amount of ore remaining: " .. resource_amount)
+        -- Output resource summary
+        if next(resource_summary) then
+            player.print("Resources within the drill's mining area:")
+            for resource_name, data in pairs(resource_summary) do
+                player.print(resource_name .. ": " .. format_number_with_commas(data.amount) .. " units")
+            end
         else
-            player.print("This drill is not currently mining any resources.")
+            player.print("No resources found within the drill's mining area.")
         end
     else
         player.print("No mining drill found within a 100-tile radius.")
