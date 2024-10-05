@@ -38,13 +38,13 @@ function gui.create_gui(player)
         index_counter = index_counter + 1
     end
 
-    -- Add a refresh icon button next to the dropdown with a green background and adjusted size
+    -- Add a refresh icon button next to the dropdown with a green background using 'green_button'
     header_flow.add{
         type = "sprite-button", 
         name = "refresh_button", 
         sprite = "utility/refresh", 
         tooltip = "Refresh", 
-        style = "tool_button_green"  -- Apply a green background style
+        style = "green_button"  -- Using Factorio's predefined green button style
     }
 
     -- Create a vertical layout for the resource table within the frame
@@ -120,13 +120,5 @@ function gui.update_drill_count(player)
         end
     end
 end
-
--- Event handler for refreshing the GUI
-script.on_event(defines.events.on_gui_click, function(event)
-    if event.element.name == "refresh_button" then
-        local player = game.get_player(event.player_index)
-        gui.update_drill_count(player)
-    end
-end)
 
 return gui
