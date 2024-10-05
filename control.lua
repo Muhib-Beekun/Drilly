@@ -109,12 +109,12 @@ end)
 
 -- Function to create the GUI for the player
 local function create_gui(player)
-    -- Check if the GUI already exists
+    -- Destroy the old GUI if it exists
     if player.gui.top.drill_inspector_frame then
         player.gui.top.drill_inspector_frame.destroy()
     end
 
-    -- Create a new frame for the GUI
+    -- Create the main frame
     local frame = player.gui.top.add{type = "frame", name = "drill_inspector_frame", caption = "Drill Inspector"}
     local dropdown_flow = frame.add{type = "flow", direction = "horizontal"}
     
@@ -132,7 +132,7 @@ local function create_gui(player)
         end
     end
 
-    -- Add a button to refresh the GUI
+    -- Add a refresh button
     frame.add{type = "button", name = "refresh_button", caption = "Refresh"}
 
     -- Add a label to display the count
@@ -141,9 +141,24 @@ end
 
 -- Function to update the drill count for the selected resource and surface
 local function update_drill_count(player)
-    -- Get the selected surface and resource from the dropdowns
-    local surface_name = player.gui.top.drill_inspector_frame.surface_dropdown.get_item(player.gui.top.drill_inspector_frame.surface_dropdown.selected_index)
-    local resource_name = player.gui.top.drill_inspector_frame.resource_dropdown.get_item(player.gui.top.drill_inspector_frame.resource_dropdown.selected_index)
+    -- Ensure the GUI exists before trying to access its elements
+    local frame = player.gui.top.drill_inspector_frame
+    if not frame then
+        player.print("Error: Drill inspector frame not found.")
+        return
+    end
+
+    local surface_dropdown = frame.surface_dropdown
+    local resource_dropdown = frame.resource_dropdown
+
+    -- Ensure the dropdowns exist
+    if not surface_dropdown or not resource_dropdown then
+        player.print("Error: Surface or Resource dropdown not found.")
+        return
+    end
+
+    local surface_name = surface_dropdown.get_item(surface_dropdown.selected_index)
+    local resource_name = resource_dropdown.get_item(resource_dropdown.selected_index)
 
     if not surface_name or not resource_name then
         player.print("Please select a surface and resource.")
@@ -175,7 +190,7 @@ local function update_drill_count(player)
     end
 
     -- Update the label with the count
-    player.gui.top.drill_inspector_frame.drill_count_label.caption = "Drills mining: " .. drill_count
+    frame.drill_count_label.caption = "Drills mining: " .. drill_count
 end
 
 -- Event handler for refreshing the GUI
@@ -192,3 +207,4 @@ commands.add_command("drill_inspector", "Opens the drill inspector GUI", functio
         create_gui(player)
     end
 end)
+
