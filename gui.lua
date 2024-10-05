@@ -17,14 +17,16 @@ function gui.create_gui(player)
         caption = "Drilly"
     }
 
-    -- Create a flow for the header (title, dropdown, and refresh icon)
+    -- Create a flow for the header (dropdown and refresh icon)
     local header_flow = main_frame.add{type = "flow", direction = "horizontal"}
 
-    -- Add title "Drilly"
-    header_flow.add{type = "label", caption = "Drilly", style = "heading_1_label"}
-
     -- Add surface dropdown with an "All" option and default to the current surface
-    local surface_dropdown = header_flow.add{type = "drop-down", name = "surface_dropdown", items = {"All"}, selected_index = 1}
+    local surface_dropdown = header_flow.add{
+        type = "drop-down", 
+        name = "surface_dropdown", 
+        items = {"All"}, 
+        selected_index = 1
+    }
 
     -- Add all available surfaces to the dropdown
     local index_counter = 2
@@ -36,8 +38,14 @@ function gui.create_gui(player)
         index_counter = index_counter + 1
     end
 
-    -- Add a refresh icon button next to the dropdown
-    header_flow.add{type = "sprite-button", name = "refresh_button", sprite = "utility/refresh", tooltip = "Refresh"}
+    -- Add a refresh icon button next to the dropdown with a green background and adjusted size
+    header_flow.add{
+        type = "sprite-button", 
+        name = "refresh_button", 
+        sprite = "utility/refresh", 
+        tooltip = "Refresh", 
+        style = "tool_button_green"  -- Apply a green background style
+    }
 
     -- Create a vertical layout for the resource table within the frame
     local resource_flow = main_frame.add{type = "flow", direction = "vertical"}
@@ -55,7 +63,7 @@ function gui.update_drill_count(player)
     end
 
     local header_flow = main_frame.children[1] -- Header is the first child
-    local surface_dropdown = header_flow.children[2] -- Dropdown is the second child
+    local surface_dropdown = header_flow.children[1] -- Dropdown is the first child now
     local selected_surface_name = surface_dropdown.get_item(surface_dropdown.selected_index)
 
     local resource_flow = main_frame.children[2] -- Resource flow is the second item after the header
