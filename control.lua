@@ -11,19 +11,31 @@ end
 
 -- Function to inspect a mining drill
 local function inspect_drill(player)
-    -- Find the first area-mining-drill on the player's surface
-    local drill = player.surface.find_entities_filtered{name="area-mining-drill"}[1]
+    -- Find the first mining drill on the player's surface
+    local drill = player.surface.find_entities_filtered{
+        type = "mining-drill", 
+        position = player.position, 
+        radius = 100
+    }[1]
 
     if drill then
+        -- Get the prototype to retrieve the mining radius
+        local drill_prototype = drill.prototype
+        if not drill_prototype.mining_drill_radius then
+            player.print("Error: Mining drill radius not available for this drill.")
+            return
+        end
+        local mining_radius = drill_prototype.mining_drill_radius
+
         -- Print drill information and zoom to the drill
-        player.print("Pinging location of area-mining-drill with entity number: " .. drill.unit_number)
+        player.print("Pinging location of mining drill with entity number: " .. drill.unit_number)
         player.print("Position: x = " .. drill.position.x .. ", y = " .. drill.position.y)
         player.zoom_to_world(drill.position, 0.5)
 
-        -- Define the bounding box for the 11x11 mining area centered on the drill
+        -- Define the bounding box based on the actual mining radius
         local bounding_box = {
-            left_top = {x = drill.position.x - 5.5, y = drill.position.y - 5.5},
-            right_bottom = {x = drill.position.x + 5.5, y = drill.position.y + 5.5}
+            left_top = {x = drill.position.x - mining_radius, y = drill.position.y - mining_radius},
+            right_bottom = {x = drill.position.x + mining_radius, y = drill.position.y + mining_radius}
         }
 
         -- Create a highlight box to mark the mining area
@@ -58,7 +70,7 @@ local function inspect_drill(player)
             player.print("This drill is not currently mining any resources.")
         end
     else
-        player.print("No area-mining-drill found on this surface.")
+        player.print("No mining drill found within a 100-tile radius.")
     end
 end
 
