@@ -3,6 +3,21 @@ local drill_utils = require("drill_utils")
 
 local gui = {}
 
+-- Function to create the custom button on the top left for the player
+function gui.create_custom_button(player)
+    local button_flow = mod_gui.get_button_flow(player)  -- Get the player's button flow
+    
+    -- Create the button only if it doesn't already exist
+    if not button_flow.drilly_button then
+        button_flow.add{
+            type = "sprite-button",
+            name = "drilly_button",
+            sprite = "drilly_icon",  -- Use the custom Drilly sprite here
+            tooltip = "Open Drilly",  -- Tooltip when hovering over the button
+            style = mod_gui.button_style,  -- Use a built-in button style
+        }
+    end
+end
 
 -- Function to create the GUI for the player (including surfaces in dropdown)
 function gui.create_gui(player)
