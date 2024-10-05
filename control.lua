@@ -106,3 +106,89 @@ commands.add_command("inspect_drill", "Inspects the nearest mining drill.", func
         inspect_drill(player)
     end
 end)
+
+-- Function to create the GUI for the player
+local function create_gui(player)
+    -- Check if the GUI already exists
+    if player.gui.top.drill_inspector_frame then
+        player.gui.top.drill_inspector_frame.destroy()
+    end
+
+    -- Create a new frame for the GUI
+    local frame = player.gui.top.add{type = "frame", name = "drill_inspector_frame", caption = "Drill Inspector"}
+    local dropdown_flow = frame.add{type = "flow", direction = "horizontal"}
+    
+    -- Add surface dropdown
+    local surface_dropdown = dropdown_flow.add{type = "drop-down", name = "surface_dropdown", items = {}}
+    for _, surface in pairs(game.surfaces) do
+        surface_dropdown.add_item(surface.name)
+    end
+
+    -- Add resource type dropdown
+    local resource_dropdown = dropdown_flow.add{type = "drop-down", name = "resource_dropdown", items = {}}
+    for _, resource in pairs(game.entity_prototypes) do
+        if resource.type == "resource" then
+            resource_dropdown.add_item(resource.name)
+        end
+    end
+
+    -- Add a button to refresh the GUI
+    frame.add{type = "button", name = "refresh_button", caption = "Refresh"}
+
+    -- Add a label to display the count
+    frame.add{type = "label", name = "drill_count_label", caption = "Drills mining: 0"}
+end
+
+-- Function to update the drill count for the selected resource and surface
+local function update_drill_count(player)
+    -- Get the selected surface and resource from the dropdowns
+    local surface_name = player.gui.top.drill_inspector_frame.surface_dropdown.get_item(player.gui.top.drill_inspector_frame.surface_dropdown.selected_index)
+    local resource_name = player.gui.top.drill_inspector_frame.resource_dropdown.get_item(player.gui.top.drill_inspector_frame.resource_dropdown.selected_index)
+
+    if not surface_name or not resource_name then
+        player.print("Please select a surface and resource.")
+        return
+    end
+
+    local surface = game.surfaces[surface_name]
+    local drill_count = 0
+
+    -- Find all mining drills on the selected surface
+    local drills = surface.find_entities_filtered{name = "electric-mining-drill"}
+
+    -- Count the number of drills mining the selected resource
+    for _, drill in pairs(drills) do
+        local mining_area = {
+            left_top = {x = drill.position.x - drill.prototype.mining_drill_radius, y = drill.position.y - drill.prototype.mining_drill_radius},
+            right_bottom = {x = drill.position.x + drill.prototype.mining_drill_radius, y = drill.position.y + drill.prototype.mining_drill_radius}
+        }
+
+        local resources = surface.find_entities_filtered{
+            area = mining_area,
+            type = "resource",
+            name = resource_name
+        }
+
+        if #resources > 0 then
+            drill_count = drill_count + 1
+        end
+    end
+
+    -- Update the label with the count
+    player.gui.top.drill_inspector_frame.drill_count_label.caption = "Drills mining: " .. drill_count
+end
+
+-- Event handler for refreshing the GUI
+script.on_event(defines.events.on_gui_click, function(event)
+    if event.element.name == "refresh_button" then
+        update_drill_count(game.get_player(event.player_index))
+    end
+end)
+
+-- Command to open the GUI
+commands.add_command("drill_inspector", "Opens the drill inspector GUI", function(event)
+    local player = game.get_player(event.player_index)
+    if player then
+        create_gui(player)
+    end
+end)
