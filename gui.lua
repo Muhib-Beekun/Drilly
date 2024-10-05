@@ -25,27 +25,22 @@ function gui.create_gui(player)
         type = "drop-down", 
         name = "surface_dropdown", 
         items = {"All"}, 
-        selected_index = 1
+        selected_index = 1,
+        style = "dropdown",  -- Using the default dropdown style
     }
+    surface_dropdown.style.width = 180  -- Set a custom width for the dropdown
 
-    -- Add all available surfaces to the dropdown
-    local index_counter = 2
-    for _, surface in pairs(game.surfaces) do
-        surface_dropdown.add_item(surface.name)
-        if surface.name == player.surface.name then
-            surface_dropdown.selected_index = index_counter -- Select the current surface by default
-        end
-        index_counter = index_counter + 1
-    end
-
-    -- Add a refresh icon button next to the dropdown with a green background using 'green_button'
-    header_flow.add{
+    -- Add a green refresh icon button next to the dropdown and set its width smaller
+    local refresh_button = header_flow.add{
         type = "sprite-button", 
         name = "refresh_button", 
         sprite = "utility/refresh", 
         tooltip = "Refresh", 
-        style = "green_button"  -- Using Factorio's predefined green button style
+        style = "green_button"  -- Use the predefined green button style
     }
+    refresh_button.style.width = 30  -- Set a smaller width for the refresh button
+    refresh_button.style.height = 30  -- Set height to keep the proportions
+    refresh_button.style.padding = 2  -- Adjust padding to make the icon stay large
 
     -- Create a vertical layout for the resource table within the frame
     local resource_flow = main_frame.add{type = "flow", direction = "vertical"}
@@ -86,37 +81,30 @@ function gui.update_drill_count(player)
         local resources = drill_utils.get_mined_resources(surface)
         local drill_data = drill_utils.get_drill_data(surface)
 
-        -- Display the surface name
-        resource_flow.add{type = "label", caption = "Surface: " .. surface.name}
-
         for resource_name, resource_data in pairs(resources) do
             -- Determine if the resource is an item or entity, then set the sprite type
             local sprite_type = game.item_prototypes[resource_name] and "item" or "entity"
             local sprite = sprite_type .. "/" .. resource_name
 
-            -- Add resource sprite with the amount
+            -- Add resource sprite with the amount and set tooltip
             resource_flow.add{
                 type = "sprite-button",
                 sprite = sprite,
-                number = resource_data.total_amount
+                number = resource_data.total_amount,
+                tooltip = resource_name .. ": " .. resource_data.total_amount  -- Tooltip with resource name and count
             }
 
-            -- Add drill sprites for each drill type mining this resource
+            -- Add drill sprites for each drill type mining this resource and set tooltips
             if drill_data[resource_name] then
                 for drill_type, count in pairs(drill_data[resource_name]) do
                     resource_flow.add{
                         type = "sprite-button",
                         sprite = "entity/" .. drill_type,
-                        number = count
+                        number = count,
+                        tooltip = drill_type .. ": " .. count  -- Tooltip with drill type and count
                     }
                 end
             end
-
-            -- Optionally add a label for resource type and drill count
-            resource_flow.add{
-                type = "label",
-                caption = resource_name .. " being mined by drills of different types"
-            }
         end
     end
 end
