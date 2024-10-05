@@ -1,0 +1,11 @@
+{
+    "name": "drilly",
+    "version": "0.1.0",
+    "title": "Drilly",
+    "author": "Muhib Beekun",
+    "description": "Inspects mining drills and displays relevant information.",
+    "factorio_version": "1.1",
+    "dependencies": [
+        "base >= 1.1"
+    ]
+}
