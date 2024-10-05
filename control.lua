@@ -1,3 +1,78 @@
+-- control.lua
+local mod_gui = require("mod-gui")
+local gui = require("gui")
+local drill_utils = require("drill_utils")
+
+-- Function to handle GUI clicks (for both refresh and close buttons)
+script.on_event(defines.events.on_gui_click, function(event)
+    local player = game.get_player(event.player_index)
+
+    -- Check if the clicked element is valid
+    if event.element and event.element.valid then
+        -- Handle refresh button click
+        if event.element.name == "refresh_button" then
+            gui.update_drill_count(player)  -- Refresh the drill data
+
+        -- Handle close button click
+        elseif event.element.name == "drill_close_button" then
+            if player.gui.top.drill_inspector_frame then
+                player.gui.top.drill_inspector_frame.destroy()  -- Close the GUI
+            end
+
+        -- Handle the custom Drilly button (top-left button)
+        elseif event.element.name == "drilly_button" then
+            -- Toggle the Drilly GUI
+            if player.gui.top.drill_inspector_frame then
+                player.gui.top.drill_inspector_frame.destroy()  -- Close the GUI if it's open
+            else
+                gui.create_gui(player)  -- Open the GUI if it's not open
+            end
+        end
+    end
+end)
+
+-- Create the Drilly button with a check if it already exists
+local function create_drilly_button_if_needed(player)
+    local button_flow = mod_gui.get_button_flow(player)
+    
+    -- Check if the Drilly button already exists
+    if not button_flow.drilly_button then
+        gui.create_custom_button(player)  -- Create the Drilly button if it doesn't exist
+    end
+end
+
+
+-- Create the Drilly button for players when they join or load the game
+script.on_event(defines.events.on_player_joined_game, function(event)
+    local player = game.get_player(event.player_index)
+    create_drilly_button_if_needed(player)  -- Check and create the button if it doesn't exist
+end)
+
+-- Add the Drilly button when the game is initialized (new game or first mod load)
+script.on_init(function()
+    for _, player in pairs(game.players) do
+        create_drilly_button_if_needed(player)
+    end
+end)
+
+
+-- Handle changes when a game is loaded or mods are updated
+script.on_configuration_changed(function(event)
+    for _, player in pairs(game.players) do
+        create_drilly_button_if_needed(player)
+    end
+end)
+
+-- Command to open the drill inspector GUI
+commands.add_command("drilly", "Forces the creation of the Drilly button", function(event)
+    local player = game.get_player(event.player_index)
+    if player then
+        gui.create_custom_button(player)
+    end
+end)
+
+--Other functions for cleanup and incoperation later
+
 -- Utility: Format numbers with commas
 local function format_number_with_commas(number)
     local formatted = tostring(number)
@@ -36,6 +111,7 @@ local function highlight_mining_area(drill, mining_radius, player)
 
     return bounding_box
 end
+
 
 -- Function: Summarize resources in the mining area
 local function summarize_resources(drill, bounding_box, player)
@@ -104,36 +180,5 @@ commands.add_command("inspect_drill", "Inspects the nearest mining drill.", func
     local player = game.get_player(event.player_index)
     if player then
         inspect_drill(player)
-    end
-end)
-
--- Require the other modules
-local gui = require("gui")
-local drill_utils = require("drill_utils")
-
--- Command to open the drill inspector GUI
-commands.add_command("drill_inspector", "Opens the drill inspector GUI", function(event)
-    local player = game.get_player(event.player_index)
-    if player then
-        gui.create_gui(player)
-    end
-end)
-
--- Function to handle GUI clicks (for both refresh and close buttons)
-script.on_event(defines.events.on_gui_click, function(event)
-    local player = game.get_player(event.player_index)
-
-    -- Check if the clicked element is valid
-    if event.element and event.element.valid then
-        -- Handle refresh button click
-        if event.element.name == "refresh_button" then
-            gui.update_drill_count(player)
-
-        -- Handle close button click
-        elseif event.element.name == "drill_close_button" then
-            if player.gui.top.drill_inspector_frame then
-                player.gui.top.drill_inspector_frame.destroy()  -- Close the GUI
-            end
-        end
     end
 end)
