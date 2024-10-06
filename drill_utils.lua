@@ -3,37 +3,103 @@ local drill_utils = {}
 -- Function to fetch mined resources being exploited by drills on the surface
 function drill_utils.get_mined_resources(surface)
     local resources = {}
-    local tracked_drills = {}  -- To prevent double counting
+    local resource_drill_count = {} -- To track how many drills overlap each resource
+
+    -- Ensure the surface is valid before proceeding
+    if not surface then
+        game.print("Error: Surface is nil or invalid.")
+        return resources
+    end
 
     -- Find all mining drills on the surface
-    local drills = surface.find_entities_filtered{type = "mining-drill"}
+    local drills = surface.find_entities_filtered { type = "mining-drill" }
 
-    -- Loop through drills to collect their mined resources
+    -- Check if drills is nil
+    if not drills then
+        game.print("Error: No drills found on the surface!")
+        return resources -- Return empty resources to prevent further errors
+    end
+
+    -- First pass: Count how many drills overlap each resource
     for _, drill in pairs(drills) do
-        -- Check if the drill has already been counted
-        if not tracked_drills[drill.unit_number] then
-            local mining_area = {
-                left_top = {x = drill.position.x - drill.prototype.mining_drill_radius, y = drill.position.y - drill.prototype.mining_drill_radius},
-                right_bottom = {x = drill.position.x + drill.prototype.mining_drill_radius, y = drill.position.y + drill.prototype.mining_drill_radius}
-            }
+        -- Check if drill.prototype and drill.prototype.mining_drill_radius are valid
+        if not drill.prototype or not drill.prototype.mining_drill_radius then
+            game.print("Error: Drill prototype or mining drill radius is nil for drill at position: " ..
+                drill.position.x .. ", " .. drill.position.y)
+            goto continue
+        end
 
-            -- Find all resources in the drill's mining area
-            local resource_entities = surface.find_entities_filtered{area = mining_area, type = "resource"}
+        local mining_area = {
+            left_top = { x = drill.position.x - drill.prototype.mining_drill_radius, y = drill.position.y - drill.prototype.mining_drill_radius },
+            right_bottom = { x = drill.position.x + drill.prototype.mining_drill_radius, y = drill.position.y + drill.prototype.mining_drill_radius }
+        }
 
-            -- Loop through the resources mined by this drill
-            for _, resource in pairs(resource_entities) do
-                local resource_name = resource.name
-                if not resources[resource_name] then
-                    resources[resource_name] = {total_amount = 0, drill_count = 0}
-                end
-                resources[resource_name].total_amount = resources[resource_name].total_amount + resource.amount
-                -- Count the drill for the resource only once
-                resources[resource_name].drill_count = resources[resource_name].drill_count + 1
+        -- Find all resources in the drill's mining area
+        local resource_entities = surface.find_entities_filtered { area = mining_area, type = "resource" }
+
+        -- Check if resource_entities is nil
+        if not resource_entities then
+            game.print("Error: No resources found in the mining area!")
+            goto continue -- Skip to the next drill if no resources found
+        end
+
+        -- Loop through the resources mined by this drill
+        for _, resource in pairs(resource_entities) do
+            local resource_key = resource.position.x .. "_" .. resource.position.y -- Use position as a unique key
+            if not resource_drill_count[resource_key] then
+                resource_drill_count[resource_key] = 0
+            end
+            -- Increment the number of drills overlapping this resource
+            resource_drill_count[resource_key] = resource_drill_count[resource_key] + 1
+        end
+
+        ::continue::
+    end
+
+    -- Second pass: Sum resources, dividing by the number of overlapping drills
+    for _, drill in pairs(drills) do
+        if not drill.prototype or not drill.prototype.mining_drill_radius then
+            game.print("Skipping drill at position: " ..
+                drill.position.x .. ", " .. drill.position.y .. " due to invalid prototype or radius.")
+            goto continue_second_pass
+        end
+
+        local mining_area = {
+            left_top = { x = drill.position.x - drill.prototype.mining_drill_radius, y = drill.position.y - drill.prototype.mining_drill_radius },
+            right_bottom = { x = drill.position.x + drill.prototype.mining_drill_radius, y = drill.position.y + drill.prototype.mining_drill_radius }
+        }
+
+        -- Find all resources in the drill's mining area
+        local resource_entities = surface.find_entities_filtered { area = mining_area, type = "resource" }
+
+        -- Check if resource_entities is nil again
+        if not resource_entities then
+            game.print("Error: No resources found in the second pass for this drill.")
+            goto continue_second_pass
+        end
+
+        -- Loop through the resources mined by this drill
+        for _, resource in pairs(resource_entities) do
+            local resource_name = resource.name
+            local resource_key = resource.position.x .. "_" .. resource.position.y -- Use position as a unique key
+
+            if not resources[resource_name] then
+                resources[resource_name] = { total_amount = 0, drill_count = 0 }
             end
 
-            -- Mark this drill as counted for all resources in its area
-            tracked_drills[drill.unit_number] = true
+            -- Divide the resource amount by the number of drills that overlap it
+            local drill_overlap_count = resource_drill_count[resource_key]
+            if not drill_overlap_count then
+                game.print("Error: No drill overlap count found for resource " .. resource_name)
+                drill_overlap_count = 1 -- Fallback to avoid division by nil
+            end
+            local divided_amount = resource.amount / drill_overlap_count
+
+            resources[resource_name].total_amount = resources[resource_name].total_amount + divided_amount
+            resources[resource_name].drill_count = resources[resource_name].drill_count + 1
         end
+
+        ::continue_second_pass::
     end
 
     return resources
@@ -42,41 +108,41 @@ end
 -- Function to fetch drill data for each resource and drill type
 function drill_utils.get_drill_data(surface)
     local drill_data = {}
-    local tracked_drills = {}
+    local tracked_resources = {} -- Track resources mined by specific drills
 
-    -- Find all mining drills on the surface (dynamic type detection)
-    local drills = surface.find_entities_filtered{type = "mining-drill"}
+    -- Find all mining drills on the surface
+    local drills = surface.find_entities_filtered { type = "mining-drill" }
 
     -- Loop through drills to associate them with mined resources
     for _, drill in pairs(drills) do
-        if not tracked_drills[drill.unit_number] then
-            local drill_type = drill.name  -- Get the type of drill
+        local drill_type = drill.name -- Get the type of drill
 
-            local mining_area = {
-                left_top = {x = drill.position.x - drill.prototype.mining_drill_radius, y = drill.position.y - drill.prototype.mining_drill_radius},
-                right_bottom = {x = drill.position.x + drill.prototype.mining_drill_radius, y = drill.position.y + drill.prototype.mining_drill_radius}
-            }
+        local mining_area = {
+            left_top = { x = drill.position.x - drill.prototype.mining_drill_radius, y = drill.position.y - drill.prototype.mining_drill_radius },
+            right_bottom = { x = drill.position.x + drill.prototype.mining_drill_radius, y = drill.position.y + drill.prototype.mining_drill_radius }
+        }
 
-            -- Find all resources in the drill's mining area
-            local resources = surface.find_entities_filtered{area = mining_area, type = "resource"}
-            local counted_resource_types = {}  -- Track resources this drill has been counted for
+        -- Find all resources in the drill's mining area
+        local resources = surface.find_entities_filtered { area = mining_area, type = "resource" }
 
-            for _, resource in pairs(resources) do
-                local resource_name = resource.name
+        for _, resource in pairs(resources) do
+            local resource_name = resource.name
 
-                -- Track that the drill has mined this resource
-                if not counted_resource_types[resource_name] then
-                    if not drill_data[resource_name] then
-                        drill_data[resource_name] = {}
-                    end
-                    -- Increment the count of this drill type for this resource
-                    drill_data[resource_name][drill_type] = (drill_data[resource_name][drill_type] or 0) + 1
-                    counted_resource_types[resource_name] = true  -- Mark this resource as counted for this drill
-                end
+            -- Initialize the resource in drill_data if it's not already there
+            if not drill_data[resource_name] then
+                drill_data[resource_name] = {}
             end
 
-            -- Mark this drill as counted
-            tracked_drills[drill.unit_number] = true
+            -- Ensure the drill is only counted once for each resource
+            if not tracked_resources[resource_name] then
+                tracked_resources[resource_name] = {}
+            end
+
+            -- Only increment the count if the drill has not been counted for this resource
+            if not tracked_resources[resource_name][drill.unit_number] then
+                tracked_resources[resource_name][drill.unit_number] = true -- Mark the drill as counted for this resource
+                drill_data[resource_name][drill_type] = (drill_data[resource_name][drill_type] or 0) + 1
+            end
         end
     end
 
