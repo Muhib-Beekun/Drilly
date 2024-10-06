@@ -95,7 +95,24 @@ function drill_utils.get_mined_resources(surface)
             end
             local divided_amount = resource.amount / drill_overlap_count
 
-            resources[resource_name].total_amount = resources[resource_name].total_amount + divided_amount
+            -- Check if the resource is infinite or finite
+            -- Check if the resource is infinite or finite
+            if resource.prototype.infinite_resource then
+                -- Infinite resource: calculate ratio of amount to normal_resource_amount
+                local normal_amount = resource.prototype.normal_resource_amount or 1 -- Default to 1 if missing
+                local ratio = resource.amount / normal_amount
+
+                -- Calculate yield per second
+                local yield_per_second = resource.prototype.infinite_depletion_resource_amount * ratio
+
+                -- Add the yield per second and total amount for infinite resources
+                resources[resource_name].total_amount = resources[resource_name].total_amount + yield_per_second
+            else
+                -- Finite resource: sum the amount
+                resources[resource_name].total_amount = resources[resource_name].total_amount + divided_amount
+            end
+
+            --resources[resource_name].total_amount = resources[resource_name].total_amount + divided_amount
             resources[resource_name].drill_count = resources[resource_name].drill_count + 1
         end
 
