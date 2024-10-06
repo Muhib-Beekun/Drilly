@@ -1,6 +1,6 @@
 # Drilly Mod
 
-**Drilly** is a Factorio mod that provides a graphical interface to inspect electric mining drills across different surfaces. It allows players to view a summary of mining drills based on the resources they are extracting and their locations.
+**Drilly** is a Factorio mod that provides a graphical interface to inspect resource miners across different surfaces. It allows players to view a summary of resource miners based on the resources they are extracting and their locations.
 
 ## Features
 
