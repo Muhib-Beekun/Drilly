@@ -78,6 +78,23 @@ function drill_utils.get_mined_resources(surface)
             goto continue_second_pass
         end
 
+        -- Get the base mining speed from the prototype
+        local base_mining_speed = drill.prototype.mining_speed or 1 -- Default to 1 if mining speed is missing
+
+        -- Initialize actual mining speed with the base mining speed
+        local actual_mining_speed = base_mining_speed
+
+        -- Retrieve effects applied to the drill (modules, beacons, etc.)
+        local effects = drill.effects
+        local speed_bonus = 0
+
+        if effects and effects.speed then
+            -- Apply the speed bonus from modules and beacons
+            speed_bonus = effects.speed.bonus or 0
+            -- Update actual mining speed by applying speed bonuses
+            actual_mining_speed = base_mining_speed * (1 + speed_bonus)
+        end
+
         -- Loop through the resources mined by this drill
         for _, resource in pairs(resource_entities) do
             local resource_name = resource.name
@@ -96,14 +113,14 @@ function drill_utils.get_mined_resources(surface)
             local divided_amount = resource.amount / drill_overlap_count
 
             -- Check if the resource is infinite or finite
-            -- Check if the resource is infinite or finite
             if resource.prototype.infinite_resource then
                 -- Infinite resource: calculate ratio of amount to normal_resource_amount
                 local normal_amount = resource.prototype.normal_resource_amount or 1 -- Default to 1 if missing
                 local ratio = resource.amount / normal_amount
 
-                -- Calculate yield per second
-                local yield_per_second = resource.prototype.infinite_depletion_resource_amount * ratio
+                -- Calculate yield per second and multiply by the mining speed
+                local yield_per_second = (resource.prototype.infinite_depletion_resource_amount * ratio) *
+                    actual_mining_speed
 
                 -- Add the yield per second and total amount for infinite resources
                 resources[resource_name].total_amount = resources[resource_name].total_amount + yield_per_second
@@ -112,7 +129,7 @@ function drill_utils.get_mined_resources(surface)
                 resources[resource_name].total_amount = resources[resource_name].total_amount + divided_amount
             end
 
-            --resources[resource_name].total_amount = resources[resource_name].total_amount + divided_amount
+            -- Increment the drill count for this resource
             resources[resource_name].drill_count = resources[resource_name].drill_count + 1
         end
 
