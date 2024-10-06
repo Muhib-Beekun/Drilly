@@ -14,7 +14,7 @@ local function auto_refresh_drill_count(event)
         for _, player in pairs(game.players) do
             if player and player.connected then
                 -- Check if the Drilly frame exists for the player
-                if player.gui.top.drill_inspector_frame then
+                if player.gui.screen.drill_inspector_frame then
                     -- Trigger the drill count update
                     gui.update_drill_count(player)
                 end

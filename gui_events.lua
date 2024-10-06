@@ -10,19 +10,19 @@ script.on_event(defines.events.on_gui_click, function(event)
         if event.element.name == "refresh_button" then
             gui.update_drill_count(player)
 
-        -- Handle close button click
+            -- Handle close button click
         elseif event.element.name == "drill_close_button" then
-            if player.gui.top.drill_inspector_frame then
-                player.gui.top.drill_inspector_frame.destroy()
+            if player.gui.screen.drill_inspector_frame then
+                player.gui.screen.drill_inspector_frame.destroy()
             end
 
-        -- Handle the custom Drilly button (top-left button)
+            -- Handle the custom Drilly button (top-left button)
         elseif event.element.name == "drilly_button" then
             -- Toggle the Drilly GUI
-            if player.gui.top.drill_inspector_frame then
-                player.gui.top.drill_inspector_frame.destroy()  -- Close the GUI if it's open
+            if player.gui.screen.drill_inspector_frame then
+                player.gui.screen.drill_inspector_frame.destroy() -- Close the GUI if it's open
             else
-                gui.create_gui(player)  -- Open the GUI if it's not open
+                gui.create_gui(player)                            -- Open the GUI if it's not open
             end
         end
     end

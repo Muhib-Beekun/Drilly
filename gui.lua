@@ -6,14 +6,15 @@ local gui = {}
 -- Function to create the GUI for the player (including surfaces in dropdown)
 function gui.create_gui(player)
     -- Destroy the old GUI if it exists
-    if player.gui.top.drill_inspector_frame then
-        player.gui.top.drill_inspector_frame.destroy()
+    if player.gui.screen.drill_inspector_frame then
+        player.gui.screen.drill_inspector_frame.destroy()
     end
 
-    -- Create the main frame with a grey background (proper frame element)
-    local main_frame = player.gui.top.add {
+
+    -- Create the main frame in a different section of the UI, like the 'screen' area
+    local main_frame = player.gui.screen.add {
         type = "frame",
-        direction = "vertical",
+        direction = "vertical", -- Vertical stacking to reduce horizontal space
         name = "drill_inspector_frame",
         caption = "Drilly"
     }
@@ -75,7 +76,7 @@ end
 
 -- Function to update the drill count for all resources and drill types
 function gui.update_drill_count(player)
-    local main_frame = player.gui.top.drill_inspector_frame
+    local main_frame = player.gui.screen.drill_inspector_frame
     if not main_frame then
         player.print("Error: Drilly frame not found.")
         return
