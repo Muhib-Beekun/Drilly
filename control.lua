@@ -1,67 +1,32 @@
--- control.lua
-local mod_gui = require("mod-gui")
+require("gui_events")
+local auto_refresh = require("auto_refresh")
+local drilly_button = require("drilly_button")
 local gui = require("gui")
-local drill_utils = require("drill_utils")
-
--- Function to handle GUI clicks (for both refresh and close buttons)
-script.on_event(defines.events.on_gui_click, function(event)
-    local player = game.get_player(event.player_index)
-
-    -- Check if the clicked element is valid
-    if event.element and event.element.valid then
-        -- Handle refresh button click
-        if event.element.name == "refresh_button" then
-            gui.update_drill_count(player)  -- Refresh the drill data
-
-        -- Handle close button click
-        elseif event.element.name == "drill_close_button" then
-            if player.gui.top.drill_inspector_frame then
-                player.gui.top.drill_inspector_frame.destroy()  -- Close the GUI
-            end
-
-        -- Handle the custom Drilly button (top-left button)
-        elseif event.element.name == "drilly_button" then
-            -- Toggle the Drilly GUI
-            if player.gui.top.drill_inspector_frame then
-                player.gui.top.drill_inspector_frame.destroy()  -- Close the GUI if it's open
-            else
-                gui.create_gui(player)  -- Open the GUI if it's not open
-            end
-        end
-    end
-end)
-
--- Create the Drilly button with a check if it already exists
-local function create_drilly_button_if_needed(player)
-    local button_flow = mod_gui.get_button_flow(player)
-    
-    -- Check if the Drilly button already exists
-    if not button_flow.drilly_button then
-        gui.create_custom_button(player)  -- Create the Drilly button if it doesn't exist
-    end
-end
-
-
--- Create the Drilly button for players when they join or load the game
-script.on_event(defines.events.on_player_joined_game, function(event)
-    local player = game.get_player(event.player_index)
-    create_drilly_button_if_needed(player)  -- Check and create the button if it doesn't exist
-end)
 
 -- Add the Drilly button when the game is initialized (new game or first mod load)
 script.on_init(function()
+    auto_refresh.start_auto_refresh()
     for _, player in pairs(game.players) do
-        create_drilly_button_if_needed(player)
+        drilly_button.create_drilly_button_if_needed(player)
     end
 end)
-
 
 -- Handle changes when a game is loaded or mods are updated
 script.on_configuration_changed(function(event)
+    auto_refresh.start_auto_refresh()
     for _, player in pairs(game.players) do
-        create_drilly_button_if_needed(player)
+        drilly_button.create_drilly_button_if_needed(player)
     end
 end)
+
+
+-- Hook into player settings changes and game initialization
+script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
+    if event.setting == "drilly-enable-auto-refresh" or event.setting == "drilly-auto-refresh-interval" then
+        auto_refresh.start_auto_refresh()
+    end
+end)
+
 
 -- Command to open the drill inspector GUI
 commands.add_command("drilly", "Forces the creation of the Drilly button", function(event)
@@ -87,12 +52,12 @@ end
 -- Function: Highlight the drill's mining area
 local function highlight_mining_area(drill, mining_radius, player)
     local bounding_box = {
-        left_top = {x = drill.position.x - mining_radius, y = drill.position.y - mining_radius},
-        right_bottom = {x = drill.position.x + mining_radius, y = drill.position.y + mining_radius}
+        left_top = { x = drill.position.x - mining_radius, y = drill.position.y - mining_radius },
+        right_bottom = { x = drill.position.x + mining_radius, y = drill.position.y + mining_radius }
     }
 
     -- Create a highlight box for the mining area
-    player.surface.create_entity{
+    player.surface.create_entity {
         name = "highlight-box",
         bounding_box = bounding_box,
         position = drill.position,
@@ -102,11 +67,11 @@ local function highlight_mining_area(drill, mining_radius, player)
     }
 
     -- Create flying text to mark the drill's location
-    player.surface.create_entity{
+    player.surface.create_entity {
         name = "flying-text",
         position = drill.position,
         text = "Drill Here",
-        color = {r = 1, g = 0.5, b = 0}
+        color = { r = 1, g = 0.5, b = 0 }
     }
 
     return bounding_box
@@ -115,7 +80,7 @@ end
 
 -- Function: Summarize resources in the mining area
 local function summarize_resources(drill, bounding_box, player)
-    local resources = drill.surface.find_entities_filtered{
+    local resources = drill.surface.find_entities_filtered {
         area = bounding_box,
         type = "resource"
     }
@@ -128,7 +93,7 @@ local function summarize_resources(drill, bounding_box, player)
             resource_summary[resource.name].amount = resource_summary[resource.name].amount + resource.amount
             resource_summary[resource.name].drills[drill.unit_number] = true
         else
-            resource_summary[resource.name] = {amount = resource.amount, drills = {[drill.unit_number] = true}}
+            resource_summary[resource.name] = { amount = resource.amount, drills = { [drill.unit_number] = true } }
         end
     end
 
@@ -146,9 +111,9 @@ end
 -- Function: Inspect the nearest mining drill
 local function inspect_drill(player)
     -- Find the nearest mining drill within a 100-tile radius
-    local drill = player.surface.find_entities_filtered{
-        type = "mining-drill", 
-        position = player.position, 
+    local drill = player.surface.find_entities_filtered {
+        type = "mining-drill",
+        position = player.position,
         radius = 100
     }[1]
 

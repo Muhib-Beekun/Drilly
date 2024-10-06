@@ -1,23 +1,7 @@
-local mod_gui = require("mod-gui")  -- Load the mod-gui library
 local drill_utils = require("drill_utils")
 
 local gui = {}
 
--- Function to create the custom button on the top left for the player
-function gui.create_custom_button(player)
-    local button_flow = mod_gui.get_button_flow(player)  -- Get the player's button flow
-    
-    -- Create the button only if it doesn't already exist
-    if not button_flow.drilly_button then
-        button_flow.add{
-            type = "sprite-button",
-            name = "drilly_button",
-            sprite = "drilly_icon",  -- Use the custom Drilly sprite here
-            tooltip = "Open Drilly",  -- Tooltip when hovering over the button
-            style = mod_gui.button_style,  -- Use a built-in button style
-        }
-    end
-end
 
 -- Function to create the GUI for the player (including surfaces in dropdown)
 function gui.create_gui(player)
@@ -27,21 +11,21 @@ function gui.create_gui(player)
     end
 
     -- Create the main frame with a grey background (proper frame element)
-    local main_frame = player.gui.top.add{
-        type = "frame", 
-        direction = "vertical", 
-        name = "drill_inspector_frame", 
+    local main_frame = player.gui.top.add {
+        type = "frame",
+        direction = "vertical",
+        name = "drill_inspector_frame",
         caption = "Drilly"
     }
 
     -- Create a flow for the header (dropdown, refresh icon, and close button)
-    local header_flow = main_frame.add{type = "flow", direction = "horizontal"}
+    local header_flow = main_frame.add { type = "flow", direction = "horizontal" }
 
     -- Add surface dropdown with an "All" option and default to the current surface
-    local surface_dropdown = header_flow.add{
-        type = "drop-down", 
-        name = "surface_dropdown", 
-        items = {"All"}, 
+    local surface_dropdown = header_flow.add {
+        type = "drop-down",
+        name = "surface_dropdown",
+        items = { "All" },
         selected_index = 1,
         style = "dropdown",
     }
@@ -59,11 +43,11 @@ function gui.create_gui(player)
     end
 
     -- Add a green refresh icon button next to the dropdown
-    local refresh_button = header_flow.add{
-        type = "sprite-button", 
-        name = "refresh_button", 
-        sprite = "utility/refresh", 
-        tooltip = "Refresh", 
+    local refresh_button = header_flow.add {
+        type = "sprite-button",
+        name = "refresh_button",
+        sprite = "utility/refresh",
+        tooltip = "Refresh",
         style = "green_button"
     }
     refresh_button.style.width = 30
@@ -71,19 +55,19 @@ function gui.create_gui(player)
     refresh_button.style.padding = 2
 
     -- Add a close button
-    local close_button = header_flow.add{
+    local close_button = header_flow.add {
         type = "sprite-button",
         name = "drill_close_button",
-        sprite = "utility/close_fat",  -- Close button to hide Drilly
+        sprite = "utility/close_fat", -- Close button to hide Drilly
         tooltip = "Close Drilly",
-        style = "red_button"  
+        style = "red_button"
     }
     close_button.style.width = 30
     close_button.style.height = 30
-    close_button.style.padding = -5  
+    close_button.style.padding = -5
 
     -- Create a vertical layout for the resource table within the frame
-    local resource_flow = main_frame.add{type = "flow", direction = "vertical"}
+    local resource_flow = main_frame.add { type = "flow", direction = "vertical" }
 
     -- Fetch and display mined resources for the current surface
     gui.update_drill_count(player)
@@ -119,11 +103,11 @@ function gui.update_drill_count(player)
         local drill_data = drill_utils.get_drill_data(surface)
 
         for resource_name, resource_data in pairs(resources) do
-            local resource_line = resource_flow.add{type = "flow", direction = "horizontal"}
+            local resource_line = resource_flow.add { type = "flow", direction = "horizontal" }
             local sprite_type = game.item_prototypes[resource_name] and "item" or "entity"
             local sprite = sprite_type .. "/" .. resource_name
 
-            resource_line.add{
+            resource_line.add {
                 type = "sprite-button",
                 sprite = sprite,
                 number = resource_data.total_amount,
@@ -132,7 +116,7 @@ function gui.update_drill_count(player)
 
             if drill_data[resource_name] then
                 for drill_type, count in pairs(drill_data[resource_name]) do
-                    resource_line.add{
+                    resource_line.add {
                         type = "sprite-button",
                         sprite = "entity/" .. drill_type,
                         number = count,
@@ -143,6 +127,5 @@ function gui.update_drill_count(player)
         end
     end
 end
-
 
 return gui
