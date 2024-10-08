@@ -15,6 +15,33 @@ local function format_number_with_commas(number)
     return formatted
 end
 
+-- Function to get the status name from the status value
+local function get_status_name(status_value)
+    for name, value in pairs(defines.entity_status) do
+        if value == status_value then
+            return name
+        end
+    end
+    return "Unknown status"
+end
+
+-- Function to map drill status to a style (color)
+local function get_status_style(status_value)
+    if status_value == defines.entity_status.working then
+        return "drilly_green_button"
+    elseif status_value == defines.entity_status.waiting_for_space_in_destination or
+        status_value == defines.entity_status.low_input_fluid then
+        return "drilly_yellow_button"
+    elseif status_value == defines.entity_status.no_power or
+        status_value == defines.entity_status.no_minable_resources or
+        status_value == defines.entity_status.missing_required_fluid or
+        status_value == defines.entity_status.no_fuel then
+        return "drilly_red_button"
+    else
+        return "slot_button" -- Default style (grey)
+    end
+end
+
 -- Function to create the GUI for the player (including surfaces in dropdown)
 function gui.create_gui(player)
     -- Destroy the old GUI if it exists
@@ -130,15 +157,20 @@ function gui.update_drill_count(player)
                     (display_interval == "minute" and " units/min" or (display_interval == "second" and " units/s" or " total units"))
             }
 
-
             if drill_data[resource_name] then
-                for drill_type, count in pairs(drill_data[resource_name]) do
-                    resource_line.add {
-                        type = "sprite-button",
-                        sprite = "entity/" .. drill_type,
-                        number = count,
-                        tooltip = drill_type .. ": " .. count
-                    }
+                for drill_type, status_counts in pairs(drill_data[resource_name]) do
+                    for drill_status, count in pairs(status_counts) do
+                        local status_style = get_status_style(drill_status)
+                        local status_name = get_status_name(drill_status)
+
+                        resource_line.add {
+                            type = "sprite-button",
+                            sprite = "entity/" .. drill_type,
+                            number = count,
+                            tooltip = drill_type .. " (" .. status_name .. "): " .. count,
+                            style = status_style
+                        }
+                    end
                 end
             end
         end

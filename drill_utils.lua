@@ -112,18 +112,18 @@ function drill_utils.get_mined_resources(surface, display_mode)
                 local effective_productivity = 1 + base_productivity + productivity_bonus
 
                 local yield_per_second = (resource_prototype.infinite_depletion_resource_amount * ratio) *
-                actual_mining_speed * effective_productivity / drill_overlap_count
+                    actual_mining_speed * effective_productivity / drill_overlap_count
 
                 -- Add the yield per second and total amount for infinite resources based on display mode
                 if display_mode == "second" then
                     resources[resource_name].total_amount = resources[resource_name].total_amount + yield_per_second
                 elseif display_mode == "minute" then
                     resources[resource_name].total_amount = resources[resource_name].total_amount +
-                    (yield_per_second * 60)
+                        (yield_per_second * 60)
                 else
                     -- For total, sum the total resource amount left in the resource entity
                     resources[resource_name].total_amount = resources[resource_name].total_amount +
-                    resource.amount / drill_overlap_count
+                        resource.amount / drill_overlap_count
                 end
 
                 -- Increment the drill count for this resource
@@ -158,7 +158,7 @@ function drill_utils.get_mined_resources(surface, display_mode)
                     local productivity_share = resource_productivity_share[resource_name] or 1
 
                     local extraction_rate_per_drill = actual_mining_speed * amount_per_mining_operation *
-                    effective_productivity * productivity_share
+                        effective_productivity * productivity_share
                     local adjusted_extraction_rate_per_drill = extraction_rate_per_drill / average_drill_overlap_count
 
                     -- Initialize the resource in the resources table if it's not already there
@@ -169,10 +169,10 @@ function drill_utils.get_mined_resources(surface, display_mode)
                     -- Add the extraction rate based on the display mode
                     if display_mode == "second" then
                         resources[resource_name].total_amount = resources[resource_name].total_amount +
-                        adjusted_extraction_rate_per_drill
+                            adjusted_extraction_rate_per_drill
                     elseif display_mode == "minute" then
                         resources[resource_name].total_amount = resources[resource_name].total_amount +
-                        (adjusted_extraction_rate_per_drill * 60)
+                            (adjusted_extraction_rate_per_drill * 60)
                     else
                         -- For total, sum the total resource amount left in the resource entities
                         local total_resource_amount = 0
@@ -180,7 +180,7 @@ function drill_utils.get_mined_resources(surface, display_mode)
                             total_resource_amount = total_resource_amount + res.amount
                         end
                         resources[resource_name].total_amount = resources[resource_name].total_amount +
-                        total_resource_amount
+                            total_resource_amount
                     end
 
                     -- Increment the drill count for this resource
@@ -193,7 +193,7 @@ function drill_utils.get_mined_resources(surface, display_mode)
     return resources
 end
 
--- Function to fetch drill data for each resource and drill type
+-- Function to fetch drill data for each resource, drill type, and drill status
 function drill_utils.get_drill_data(surface)
     local drill_data = {}
     local tracked_resources = {} -- Track resources mined by specific drills
@@ -201,9 +201,10 @@ function drill_utils.get_drill_data(surface)
     -- Find all mining drills on the surface
     local drills = surface.find_entities_filtered { type = "mining-drill" }
 
-    -- Loop through drills to associate them with mined resources
+    -- Loop through drills to associate them with mined resources and statuses
     for _, drill in pairs(drills) do
         local drill_type = drill.name -- Get the type of drill
+        local drill_status = drill.status
 
         local mining_area = {
             left_top = { x = drill.position.x - drill.prototype.mining_drill_radius, y = drill.position.y - drill.prototype.mining_drill_radius },
@@ -221,15 +222,25 @@ function drill_utils.get_drill_data(surface)
                 drill_data[resource_name] = {}
             end
 
+            -- Initialize the drill_type in drill_data[resource_name] if it's not already there
+            if not drill_data[resource_name][drill_type] then
+                drill_data[resource_name][drill_type] = {}
+            end
+
+            -- Initialize the status in drill_data[resource_name][drill_type] if it's not already there
+            if not drill_data[resource_name][drill_type][drill_status] then
+                drill_data[resource_name][drill_type][drill_status] = 0
+            end
+
             -- Ensure the drill is only counted once for each resource
             if not tracked_resources[resource_name] then
                 tracked_resources[resource_name] = {}
             end
 
-            -- Only increment the count if the drill has not been counted for this resource
             if not tracked_resources[resource_name][drill.unit_number] then
                 tracked_resources[resource_name][drill.unit_number] = true -- Mark the drill as counted for this resource
-                drill_data[resource_name][drill_type] = (drill_data[resource_name][drill_type] or 0) + 1
+                drill_data[resource_name][drill_type][drill_status] = drill_data[resource_name][drill_type]
+                [drill_status] + 1
             end
         end
     end
