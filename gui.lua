@@ -1,7 +1,19 @@
+--gui.lua
+
 local drill_utils = require("drill_utils")
 
 local gui = {}
 
+-- Utility: Format numbers with commas
+local function format_number_with_commas(number)
+    local formatted = tostring(number)
+    local k
+    while true do
+        formatted, k = string.gsub(formatted, "^(-?%d+)(%d%d%d)", '%1,%2')
+        if k == 0 then break end
+    end
+    return formatted
+end
 
 -- Function to create the GUI for the player (including surfaces in dropdown)
 function gui.create_gui(player)
@@ -10,8 +22,7 @@ function gui.create_gui(player)
         player.gui.screen.drill_inspector_frame.destroy()
     end
 
-
-    -- Create the main frame in a different section of the UI, like the 'screen' area
+    -- Create the main frame
     local main_frame = player.gui.screen.add {
         type = "frame",
         direction = "vertical", -- Vertical stacking to reduce horizontal space
@@ -97,10 +108,13 @@ function gui.update_drill_count(player)
         table.insert(surfaces_to_check, game.surfaces[selected_surface_name])
     end
 
+    -- Get user-selected display interval (seconds/minutes/total)
+    local display_interval = player.mod_settings["drilly-resource-interval"].value
+
     resource_flow.clear()
 
     for _, surface in pairs(surfaces_to_check) do
-        local resources = drill_utils.get_mined_resources(surface)
+        local resources = drill_utils.get_mined_resources(surface, display_interval)
         local drill_data = drill_utils.get_drill_data(surface)
 
         for resource_name, resource_data in pairs(resources) do
@@ -111,9 +125,11 @@ function gui.update_drill_count(player)
             resource_line.add {
                 type = "sprite-button",
                 sprite = sprite,
-                number = resource_data.total_amount,
-                tooltip = resource_name .. ": " .. resource_data.total_amount
+                number = string.format("%.1f", resource_data.total_amount), -- Show the extraction rate or total
+                tooltip = resource_name .. ": " .. format_number_with_commas(resource_data.total_amount) ..
+                    (display_interval == "minute" and " units/min" or (display_interval == "second" and " units/s" or " total units"))
             }
+
 
             if drill_data[resource_name] then
                 for drill_type, count in pairs(drill_data[resource_name]) do

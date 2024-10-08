@@ -1,9 +1,35 @@
+--drill_utils.lua
 local drill_utils = {}
 
+-- Function to calculate the number of resource tiles a drill covers and divide productivity accordingly
+local function calculate_resource_tile_count_and_productivity(drill, resource_entities)
+    local total_resource_tiles = 0
+    local resource_tile_count = {} -- Tracks the number of tiles for each resource type
+
+    -- Calculate the total number of resource tiles the drill covers
+    for _, resource in pairs(resource_entities) do
+        local resource_name = resource.name
+        if not resource_tile_count[resource_name] then
+            resource_tile_count[resource_name] = 0
+        end
+        resource_tile_count[resource_name] = resource_tile_count[resource_name] + 1
+        total_resource_tiles = total_resource_tiles + 1
+    end
+
+    -- For each resource, determine its share of the productivity and speed
+    local resource_productivity_share = {}
+    for resource_name, tile_count in pairs(resource_tile_count) do
+        resource_productivity_share[resource_name] = tile_count / total_resource_tiles
+    end
+
+    return resource_tile_count, resource_productivity_share
+end
+
+
 -- Function to fetch mined resources being exploited by drills on the surface
-function drill_utils.get_mined_resources(surface)
+function drill_utils.get_mined_resources(surface, display_mode)
     local resources = {}
-    local resource_drill_count = {} -- To track how many drills overlap each resource
+    local resource_drill_count = {} -- To track how many drills overlap each resource entity
 
     -- Ensure the surface is valid before proceeding
     if not surface then
@@ -14,126 +40,154 @@ function drill_utils.get_mined_resources(surface)
     -- Find all mining drills on the surface
     local drills = surface.find_entities_filtered { type = "mining-drill" }
 
-    -- Check if drills is nil
     if not drills then
         game.print("Error: No drills found on the surface!")
         return resources -- Return empty resources to prevent further errors
     end
 
-    -- First pass: Count how many drills overlap each resource
+    -- First pass: Count how many drills overlap each resource entity
     for _, drill in pairs(drills) do
-        -- Check if drill.prototype and drill.prototype.mining_drill_radius are valid
-        if not drill.prototype or not drill.prototype.mining_drill_radius then
-            game.print("Error: Drill prototype or mining drill radius is nil for drill at position: " ..
-                drill.position.x .. ", " .. drill.position.y)
-            goto continue
-        end
-
         local mining_area = {
             left_top = { x = drill.position.x - drill.prototype.mining_drill_radius, y = drill.position.y - drill.prototype.mining_drill_radius },
             right_bottom = { x = drill.position.x + drill.prototype.mining_drill_radius, y = drill.position.y + drill.prototype.mining_drill_radius }
         }
 
-        -- Find all resources in the drill's mining area
         local resource_entities = surface.find_entities_filtered { area = mining_area, type = "resource" }
 
-        -- Check if resource_entities is nil
-        if not resource_entities then
-            game.print("Error: No resources found in the mining area!")
-            goto continue -- Skip to the next drill if no resources found
-        end
-
-        -- Loop through the resources mined by this drill
         for _, resource in pairs(resource_entities) do
             local resource_key = resource.position.x .. "_" .. resource.position.y -- Use position as a unique key
             if not resource_drill_count[resource_key] then
                 resource_drill_count[resource_key] = 0
             end
-            -- Increment the number of drills overlapping this resource
             resource_drill_count[resource_key] = resource_drill_count[resource_key] + 1
         end
-
-        ::continue::
     end
 
-    -- Second pass: Sum resources, dividing by the number of overlapping drills
+    -- Second pass: Calculate resources based on mode (per second, per minute, or total)
     for _, drill in pairs(drills) do
-        if not drill.prototype or not drill.prototype.mining_drill_radius then
-            game.print("Skipping drill at position: " ..
-                drill.position.x .. ", " .. drill.position.y .. " due to invalid prototype or radius.")
-            goto continue_second_pass
-        end
-
         local mining_area = {
             left_top = { x = drill.position.x - drill.prototype.mining_drill_radius, y = drill.position.y - drill.prototype.mining_drill_radius },
             right_bottom = { x = drill.position.x + drill.prototype.mining_drill_radius, y = drill.position.y + drill.prototype.mining_drill_radius }
         }
 
-        -- Find all resources in the drill's mining area
         local resource_entities = surface.find_entities_filtered { area = mining_area, type = "resource" }
-
-        -- Check if resource_entities is nil again
-        if not resource_entities then
-            game.print("Error: No resources found in the second pass for this drill.")
-            goto continue_second_pass
-        end
-
-        -- Get the base mining speed from the prototype
         local base_mining_speed = drill.prototype.mining_speed or 1 -- Default to 1 if mining speed is missing
-
-        -- Initialize actual mining speed with the base mining speed
         local actual_mining_speed = base_mining_speed
 
-        -- Retrieve effects applied to the drill (modules, beacons, etc.)
+        -- Apply speed bonuses from effects (if applicable)
         local effects = drill.effects
         local speed_bonus = 0
-
         if effects and effects.speed then
-            -- Apply the speed bonus from modules and beacons
             speed_bonus = effects.speed.bonus or 0
-            -- Update actual mining speed by applying speed bonuses
             actual_mining_speed = base_mining_speed * (1 + speed_bonus)
         end
 
-        -- Loop through the resources mined by this drill
+        -- Calculate tile counts and productivity share for each resource type
+        local resource_tile_count, resource_productivity_share = calculate_resource_tile_count_and_productivity(drill,
+            resource_entities)
+
+        -- Keep track of resource types already processed for this drill
+        local processed_resource_types = {}
+
+        -- Loop through the resource entities mined by this drill
         for _, resource in pairs(resource_entities) do
             local resource_name = resource.name
-            local resource_key = resource.position.x .. "_" .. resource.position.y -- Use position as a unique key
+            local resource_key = resource.position.x .. "_" .. resource.position.y
 
-            if not resources[resource_name] then
-                resources[resource_name] = { total_amount = 0, drill_count = 0 }
-            end
+            local resource_prototype = resource.prototype
 
-            -- Divide the resource amount by the number of drills that overlap it
-            local drill_overlap_count = resource_drill_count[resource_key]
-            if not drill_overlap_count then
-                game.print("Error: No drill overlap count found for resource " .. resource_name)
-                drill_overlap_count = 1 -- Fallback to avoid division by nil
-            end
-            local divided_amount = resource.amount / drill_overlap_count
+            if resource_prototype.infinite_resource then
+                -- Handle infinite resources per resource entity
+                if not resources[resource_name] then
+                    resources[resource_name] = { total_amount = 0, drill_count = 0 }
+                end
 
-            -- Check if the resource is infinite or finite
-            if resource.prototype.infinite_resource then
-                -- Infinite resource: calculate ratio of amount to normal_resource_amount
-                local normal_amount = resource.prototype.normal_resource_amount or 1 -- Default to 1 if missing
+                local drill_overlap_count = resource_drill_count[resource_key] or 1
+
+                local normal_amount = resource_prototype.normal_resource_amount or 1
                 local ratio = resource.amount / normal_amount
 
-                -- Calculate yield per second and multiply by the mining speed
-                local yield_per_second = (resource.prototype.infinite_depletion_resource_amount * ratio) *
-                    actual_mining_speed
+                local base_productivity = drill.prototype.base_productivity or 0
+                local productivity_bonus = drill.productivity_bonus or 0
+                local effective_productivity = 1 + base_productivity + productivity_bonus
 
-                -- Add the yield per second and total amount for infinite resources
-                resources[resource_name].total_amount = resources[resource_name].total_amount + yield_per_second
+                local yield_per_second = (resource_prototype.infinite_depletion_resource_amount * ratio) *
+                actual_mining_speed * effective_productivity / drill_overlap_count
+
+                -- Add the yield per second and total amount for infinite resources based on display mode
+                if display_mode == "second" then
+                    resources[resource_name].total_amount = resources[resource_name].total_amount + yield_per_second
+                elseif display_mode == "minute" then
+                    resources[resource_name].total_amount = resources[resource_name].total_amount +
+                    (yield_per_second * 60)
+                else
+                    -- For total, sum the total resource amount left in the resource entity
+                    resources[resource_name].total_amount = resources[resource_name].total_amount +
+                    resource.amount / drill_overlap_count
+                end
+
+                -- Increment the drill count for this resource
+                resources[resource_name].drill_count = resources[resource_name].drill_count + 1
             else
-                -- Finite resource: sum the amount
-                resources[resource_name].total_amount = resources[resource_name].total_amount + divided_amount
+                -- Handle finite resources per resource type per drill
+                if not processed_resource_types[resource_name] then
+                    processed_resource_types[resource_name] = true -- Mark the resource type as processed for this drill
+
+                    -- Gather all resource entities of this type under the drill
+                    local resource_entities_of_type = {}
+                    local total_drill_overlap_count = 0
+
+                    for _, res in pairs(resource_entities) do
+                        if res.name == resource_name then
+                            table.insert(resource_entities_of_type, res)
+                            local res_key = res.position.x .. "_" .. res.position.y
+                            local drill_overlap_count = resource_drill_count[res_key] or 1
+                            total_drill_overlap_count = total_drill_overlap_count + drill_overlap_count
+                        end
+                    end
+
+                    local num_resource_tiles = #resource_entities_of_type
+                    local average_drill_overlap_count = total_drill_overlap_count / num_resource_tiles
+
+                    -- Calculate the extraction rate per drill, adjusted by productivity share and overlap
+                    local amount_per_mining_operation = resource_prototype.mineable_properties.products[1].amount or 1
+                    local base_productivity = drill.prototype.base_productivity or 0
+                    local productivity_bonus = drill.productivity_bonus or 0
+                    local effective_productivity = 1 + base_productivity + productivity_bonus
+
+                    local productivity_share = resource_productivity_share[resource_name] or 1
+
+                    local extraction_rate_per_drill = actual_mining_speed * amount_per_mining_operation *
+                    effective_productivity * productivity_share
+                    local adjusted_extraction_rate_per_drill = extraction_rate_per_drill / average_drill_overlap_count
+
+                    -- Initialize the resource in the resources table if it's not already there
+                    if not resources[resource_name] then
+                        resources[resource_name] = { total_amount = 0, drill_count = 0 }
+                    end
+
+                    -- Add the extraction rate based on the display mode
+                    if display_mode == "second" then
+                        resources[resource_name].total_amount = resources[resource_name].total_amount +
+                        adjusted_extraction_rate_per_drill
+                    elseif display_mode == "minute" then
+                        resources[resource_name].total_amount = resources[resource_name].total_amount +
+                        (adjusted_extraction_rate_per_drill * 60)
+                    else
+                        -- For total, sum the total resource amount left in the resource entities
+                        local total_resource_amount = 0
+                        for _, res in pairs(resource_entities_of_type) do
+                            total_resource_amount = total_resource_amount + res.amount
+                        end
+                        resources[resource_name].total_amount = resources[resource_name].total_amount +
+                        total_resource_amount
+                    end
+
+                    -- Increment the drill count for this resource
+                    resources[resource_name].drill_count = resources[resource_name].drill_count + 1
+                end
             end
-
-            -- Increment the drill count for this resource
-            resources[resource_name].drill_count = resources[resource_name].drill_count + 1
         end
-
-        ::continue_second_pass::
     end
 
     return resources

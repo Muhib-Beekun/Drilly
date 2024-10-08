@@ -6,7 +6,6 @@ local gui = require("gui")
 local function auto_refresh_drill_count(event)
     -- Check if global settings for auto-refresh are enabled
     local enable_auto_refresh = settings.global["drilly-enable-auto-refresh"].value
-    local interval_in_minutes = settings.global["drilly-auto-refresh-interval"].value
 
     -- Only proceed if auto-refresh is enabled
     if enable_auto_refresh then
