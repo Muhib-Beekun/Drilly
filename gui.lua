@@ -58,7 +58,11 @@ function gui.create_gui(player)
     }
 
     -- Create a flow for the header (dropdown, refresh icon, and close button)
-    local header_flow = main_frame.add { type = "flow", direction = "horizontal" }
+    local header_flow = main_frame.add {
+        type = "flow",
+        direction = "horizontal",
+        name = "header_flow"
+    }
 
     -- Add surface dropdown with an "All" option and default to the current surface
     local surface_dropdown = header_flow.add {
@@ -121,7 +125,11 @@ function gui.create_gui(player)
     close_button.style.padding = -5
 
     -- Create a vertical layout for the resource table within the frame
-    local resource_flow = main_frame.add { type = "flow", direction = "vertical" }
+    main_frame.add {
+        type = "flow",
+        direction = "vertical",
+        name = "resource_flow"
+    }
 
     -- Fetch and display mined resources for the current surface
     gui.update_drill_count(player)
@@ -135,11 +143,11 @@ function gui.update_drill_count(player)
         return
     end
 
-    local header_flow = main_frame.children[1]
-    local surface_dropdown = header_flow.children[1]
+    local header_flow = main_frame.header_flow
+    local surface_dropdown = header_flow.surface_dropdown
     local selected_surface_name = surface_dropdown.get_item(surface_dropdown.selected_index)
 
-    local resource_flow = main_frame.children[2]
+    local resource_flow = main_frame.resource_flow
     local surfaces_to_check = {}
 
     if selected_surface_name == "All" then
