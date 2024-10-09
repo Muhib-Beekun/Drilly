@@ -45,6 +45,27 @@ function drill_utils.get_mined_resources(surface, display_mode, player)
         return resources -- Return empty resources to prevent further errors
     end
 
+    -- Space Exploration Calculate Zone Efficiency to use for drill speed calculations
+    if script.active_mods["space-exploration"] then
+        local all_core_drills = surface.find_entities_filtered {
+            type = "mining-drill",
+            name = "se-core-miner-drill",
+            force = player.force
+        }
+        local n_mined_resources = math.max(1, #all_core_drills)
+        core_drill_efficiency = n_mined_resources ^ 0.5 / n_mined_resources
+
+        local zone_radius = 5000
+        if remote.interfaces["space-exploration"] and remote.interfaces["space-exploration"]["get_zone_from_surface_index"] then
+            local zone = remote.call("space-exploration", "get_zone_from_surface_index",
+                { surface_index = surface.index })
+            if zone and zone.radius then
+                zone_radius = zone.radius
+            end
+        end
+        core_drill_zone_efficiency = (zone_radius + 5000) / 5000
+    end
+
     -- First pass: Count how many drills overlap each resource entity
     for _, drill in pairs(drills) do
         local mining_area = {
@@ -111,8 +132,29 @@ function drill_utils.get_mined_resources(surface, display_mode, player)
                 local productivity_bonus = drill.productivity_bonus or 0
                 local effective_productivity = 1 + base_productivity + productivity_bonus
 
-                local yield_per_second = (resource_prototype.infinite_depletion_resource_amount * ratio) *
-                    actual_mining_speed * effective_productivity / drill_overlap_count
+                local yield_per_second = 0
+
+                if script.active_mods["space-exploration"] and resource_name == "se-core-miner-drill" then
+                    local mining_time = resource_prototype.mineable_properties.mining_time or 1
+                    local base_mining_rate = actual_mining_speed / mining_time
+                    yield_per_second = (
+                        base_mining_rate *
+                        core_drill_efficiency *
+                        core_drill_zone_efficiency *
+                        effective_productivity
+                    )
+                else
+                    yield_per_second = (
+                        (
+                            resource_prototype.infinite_depletion_resource_amount *
+                            ratio
+                        ) *
+                        actual_mining_speed *
+                        effective_productivity /
+                        drill_overlap_count
+                    )
+                end
+
 
                 -- Add the yield per second and total amount for infinite resources based on display mode
                 if display_mode == "second" then
