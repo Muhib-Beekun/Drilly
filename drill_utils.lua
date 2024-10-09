@@ -134,7 +134,7 @@ function drill_utils.get_mined_resources(surface, display_mode, player)
 
                 local yield_per_second = 0
 
-                if script.active_mods["space-exploration"] and resource_name == "se-core-miner-drill" then
+                if script.active_mods["space-exploration"] and drill.name == "se-core-miner-drill" then
                     local mining_time = resource_prototype.mineable_properties.mining_time or 1
                     local base_mining_rate = actual_mining_speed / mining_time
                     yield_per_second = (
