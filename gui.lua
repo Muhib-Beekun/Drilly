@@ -28,15 +28,15 @@ end
 -- Function to map drill status to a style (color)
 local function get_status_style(status_value)
     if status_value == defines.entity_status.working then
-        return "drilly_green_button"
+        return "drilly_green_slot_button"
     elseif status_value == defines.entity_status.waiting_for_space_in_destination or
         status_value == defines.entity_status.low_input_fluid then
-        return "drilly_yellow_button"
+        return "drilly_yellow_slot_button"
     elseif status_value == defines.entity_status.no_power or
         status_value == defines.entity_status.no_minable_resources or
         status_value == defines.entity_status.missing_required_fluid or
         status_value == defines.entity_status.no_fuel then
-        return "drilly_red_button"
+        return "drilly_red_slot_button"
     else
         return "slot_button" -- Default style (grey)
     end
@@ -68,7 +68,7 @@ function gui.create_gui(player)
         selected_index = 1,
         style = "dropdown",
     }
-    surface_dropdown.style.width = 180
+    surface_dropdown.style.width = 150
     surface_dropdown.style.height = 30
 
     -- Add all available surfaces to the dropdown
@@ -80,6 +80,21 @@ function gui.create_gui(player)
         end
         index_counter = index_counter + 1
     end
+
+    -- Add time period toggle button
+    local time_periods = { "S", "M", "H", "T" }
+    local current_period_index = player.mod_settings["drilly-current-period-index"].value or 1
+    local time_button = header_flow.add {
+        type = "sprite-button",
+        name = "drilly_time_toggle_button",
+        caption = time_periods[current_period_index],
+        tooltip = "Toggle time period",
+        style = "button"
+    }
+    time_button.style.width = 30
+    time_button.style.height = 30
+    time_button.style.padding = -10
+
 
     -- Add a green refresh icon button next to the dropdown
     local refresh_button = header_flow.add {
@@ -136,13 +151,19 @@ function gui.update_drill_count(player)
     end
 
     -- Get user-selected display interval (seconds/minutes/total)
-    local display_interval = player.mod_settings["drilly-resource-interval"].value
+    -- local display_interval = player.mod_settings["drilly-resource-interval"].value
+
+    local period_index = player.mod_settings["drilly-current-period-index"].value or 1
+    local display_intervals = { "second", "minute", "hour", "total" }
+    player.print(display_intervals[period_index])
+    local display_interval = display_intervals[period_index]
+
 
     resource_flow.clear()
 
     for _, surface in pairs(surfaces_to_check) do
-        local resources = drill_utils.get_mined_resources(surface, display_interval)
-        local drill_data = drill_utils.get_drill_data(surface)
+        local resources = drill_utils.get_mined_resources(surface, display_interval, player)
+        local drill_data = drill_utils.get_drill_data(surface, player)
 
         for resource_name, resource_data in pairs(resources) do
             local resource_line = resource_flow.add { type = "flow", direction = "horizontal" }

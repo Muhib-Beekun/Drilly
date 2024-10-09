@@ -2,7 +2,7 @@
 
 local styles = data.raw["gui-style"]["default"]
 
-styles.drilly_red_button = {
+styles.drilly_red_slot_button = {
     type = "button_style",
     parent = "slot_button",
     default_graphical_set = {
@@ -28,7 +28,7 @@ styles.drilly_red_button = {
     },
 }
 
-styles.drilly_green_button = {
+styles.drilly_green_slot_button = {
     type = "button_style",
     parent = "slot_button",
     default_graphical_set = {
@@ -54,7 +54,7 @@ styles.drilly_green_button = {
     },
 }
 
-styles.drilly_yellow_button = {
+styles.drilly_yellow_slot_button = {
     type = "button_style",
     parent = "slot_button",
     default_graphical_set = {

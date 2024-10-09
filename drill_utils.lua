@@ -27,7 +27,7 @@ end
 
 
 -- Function to fetch mined resources being exploited by drills on the surface
-function drill_utils.get_mined_resources(surface, display_mode)
+function drill_utils.get_mined_resources(surface, display_mode, player)
     local resources = {}
     local resource_drill_count = {} -- To track how many drills overlap each resource entity
 
@@ -38,7 +38,7 @@ function drill_utils.get_mined_resources(surface, display_mode)
     end
 
     -- Find all mining drills on the surface
-    local drills = surface.find_entities_filtered { type = "mining-drill" }
+    local drills = surface.find_entities_filtered { type = "mining-drill", force = player.force }
 
     if not drills then
         game.print("Error: No drills found on the surface!")
@@ -120,6 +120,9 @@ function drill_utils.get_mined_resources(surface, display_mode)
                 elseif display_mode == "minute" then
                     resources[resource_name].total_amount = resources[resource_name].total_amount +
                         (yield_per_second * 60)
+                elseif display_mode == "hour" then
+                    resources[resource_name].total_amount = resources[resource_name].total_amount +
+                        (yield_per_second * 60 * 60)
                 else
                     -- For total, sum the total resource amount left in the resource entity
                     resources[resource_name].total_amount = resources[resource_name].total_amount +
@@ -173,6 +176,9 @@ function drill_utils.get_mined_resources(surface, display_mode)
                     elseif display_mode == "minute" then
                         resources[resource_name].total_amount = resources[resource_name].total_amount +
                             (adjusted_extraction_rate_per_drill * 60)
+                    elseif display_mode == "hour" then
+                        resources[resource_name].total_amount = resources[resource_name].total_amount +
+                            (adjusted_extraction_rate_per_drill * 60 * 60)
                     else
                         -- For total, sum the total resource amount left in the resource entities
                         local total_resource_amount = 0
@@ -194,12 +200,12 @@ function drill_utils.get_mined_resources(surface, display_mode)
 end
 
 -- Function to fetch drill data for each resource, drill type, and drill status
-function drill_utils.get_drill_data(surface)
+function drill_utils.get_drill_data(surface, player)
     local drill_data = {}
     local tracked_resources = {} -- Track resources mined by specific drills
 
     -- Find all mining drills on the surface
-    local drills = surface.find_entities_filtered { type = "mining-drill" }
+    local drills = surface.find_entities_filtered { type = "mining-drill", force = player.force }
 
     -- Loop through drills to associate them with mined resources and statuses
     for _, drill in pairs(drills) do
@@ -240,7 +246,7 @@ function drill_utils.get_drill_data(surface)
             if not tracked_resources[resource_name][drill.unit_number] then
                 tracked_resources[resource_name][drill.unit_number] = true -- Mark the drill as counted for this resource
                 drill_data[resource_name][drill_type][drill_status] = drill_data[resource_name][drill_type]
-                [drill_status] + 1
+                    [drill_status] + 1
             end
         end
     end

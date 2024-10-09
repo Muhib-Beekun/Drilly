@@ -16,11 +16,11 @@ data:extend({
         order = "b"
     },
     {
-        type = "string-setting",
-        name = "drilly-resource-interval",
+        type = "int-setting",
+        name = "drilly-current-period-index",
         setting_type = "runtime-per-user",
-        allowed_values = { "second", "minute", "total" },
-        default_value = "second",
-        order = "c"
+        default_value = 1,
+        allowed_values = { 1, 2, 3, 4 },
+        hidden = true
     }
 })
