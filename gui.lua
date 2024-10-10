@@ -126,10 +126,13 @@ function gui.create_gui(player)
 
     -- Create a vertical layout for the resource table within the frame
     main_frame.add {
-        type = "flow",
+        type = "scroll-pane",
         direction = "vertical",
-        name = "resource_flow"
+        name = "resource_flow",
+        vertical_scroll_policy = "auto"
     }
+
+    main_frame.resource_flow.style.maximal_height = 600
 
     -- Fetch and display mined resources for the current surface
     gui.update_drill_count(player)
