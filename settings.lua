@@ -5,7 +5,7 @@ data:extend({
         type = "int-setting",
         name = "drilly-refresh-interval-minutes",
         setting_type = "runtime-global",
-        default_value = 1, -- Default to 1 minute
+        default_value = 5,
         minimum_value = 1,
         maximum_value = 60,
         order = "a"
