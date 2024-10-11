@@ -1,11 +1,13 @@
+-- control.lua
+
 require("gui_events")
-local auto_refresh = require("auto_refresh")
 local drilly_button = require("drilly_button")
 local gui = require("gui")
+local drill_utils = require("drill_utils")
 
 -- Add the Drilly button when the game is initialized (new game or first mod load)
 script.on_init(function()
-    auto_refresh.start_auto_refresh()
+    drill_utils.initialize_drills()
     for _, player in pairs(game.players) do
         drilly_button.create_drilly_button_if_needed(player)
     end
@@ -13,28 +15,106 @@ end)
 
 -- Handle changes when a game is loaded or mods are updated
 script.on_configuration_changed(function(event)
-    auto_refresh.start_auto_refresh()
+    drill_utils.initialize_drills()
     for _, player in pairs(game.players) do
         drilly_button.create_drilly_button_if_needed(player)
     end
 end)
 
+-- Handle changes when a player joins
+script.on_event(defines.events.on_player_joined_game, function(event)
+    local player = game.get_player(event.player_index)
+    drilly_button.create_drilly_button_if_needed(player)
+    drill_utils.initialize_drills()
+end
+)
 
--- Hook into player settings changes and game initialization
-script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
-    if event.setting == "drilly-enable-auto-refresh" or event.setting == "drilly-auto-refresh-interval" then
-        auto_refresh.start_auto_refresh()
+script.on_event(defines.events.on_player_created, function(event)
+    local player = game.get_player(event.player_index)
+    if player then
+        drilly_button.create_drilly_button_if_needed(player)
     end
 end)
-
 
 -- Command to open the drill inspector GUI
 commands.add_command("drilly", "Forces the creation of the Drilly button", function(event)
     local player = game.get_player(event.player_index)
     if player then
-        gui.create_custom_button(player)
+        drilly_button.create_drilly_button_if_needed(player)
+        drill_utils.initialize_drills()
     end
 end)
+
+
+
+script.on_event(defines.events.on_tick, function(event)
+    if not global.drills then
+        return
+    end
+
+    local total_drills = #global.drill_unit_numbers
+    if total_drills == 0 then
+        -- Empty drills list, prompt a full refresh
+        drill_utils.initialize_drills()
+        total_drills = #global.drill_unit_numbers
+        if total_drills == 0 then
+            return -- No drills to process
+        end
+    end
+
+    -- Get the desired refresh interval in minutes and convert to ticks
+    local refresh_interval_minutes = settings.global["drilly-refresh-interval-minutes"].value or 1 -- Default to 1 minute
+    local refresh_interval_ticks = refresh_interval_minutes *
+        3600                                                                                       -- 60 seconds * 60 ticks per second
+
+    local drills_per_tick = math.ceil(total_drills / refresh_interval_ticks)
+    global.drills_per_tick = drills_per_tick
+
+    for i = 1, drills_per_tick do
+        local index = global.drill_processing_index
+        if index > total_drills then
+            global.drill_processing_index = 1
+            index = 1
+        end
+
+        local unit_number = global.drill_unit_numbers[index]
+        local drill_data = global.drills[unit_number]
+        if drill_data then
+            drill_utils.update_drill_data(drill_data)
+        end
+
+        global.drill_processing_index = global.drill_processing_index + 1
+    end
+
+    -- Update progress bar every second
+    if event.tick % 60 == 0 then
+        for _, player in pairs(game.connected_players) do
+            if player.gui.screen.drill_inspector_frame then
+                gui.update_drill_count(player)
+                gui.update_progress_bar(player, global.drill_processing_index - 1, total_drills)
+            end
+        end
+    end
+end)
+
+-- Handle when a drill is built
+script.on_event({ defines.events.on_built_entity, defines.events.on_robot_built_entity }, function(event)
+    local entity = event.created_entity or event.entity
+    if entity and entity.valid and entity.type == "mining-drill" then
+        drill_utils.add_drill(entity)
+    end
+end)
+
+-- Handle when a drill is removed
+script.on_event(
+    { defines.events.on_player_mined_entity, defines.events.on_robot_mined_entity, defines.events.on_entity_died },
+    function(event)
+        local entity = event.entity
+        if entity and entity.valid and entity.type == "mining-drill" then
+            drill_utils.remove_drill(entity)
+        end
+    end)
+
 
 --Other functions for cleanup and incoperation later
 

@@ -100,6 +100,7 @@ function gui.create_gui(player)
     time_button.style.padding = -10
 
 
+
     -- Add a green refresh icon button next to the dropdown
     local refresh_button = header_flow.add {
         type = "sprite-button",
@@ -125,14 +126,36 @@ function gui.create_gui(player)
     close_button.style.padding = -5
 
     -- Create a vertical layout for the resource table within the frame
-    main_frame.add {
+    local resource_flow = main_frame.add {
         type = "scroll-pane",
         direction = "vertical",
         name = "resource_flow",
         vertical_scroll_policy = "auto"
     }
 
-    main_frame.resource_flow.style.maximal_height = 600
+    resource_flow.style.maximal_height = 600
+
+    local progress_flow = main_frame.add {
+        type = "flow",
+        direction = "horizontal",
+        name = "progress_flow"
+    }
+    progress_flow.style.vertical_align = "center"
+
+    local progress_bar = progress_flow.add {
+        type = "progressbar",
+        name = "drill_progress_bar",
+        value = 0
+    }
+    progress_bar.style.horizontally_stretchable = true
+    progress_bar.style.width = 200
+
+    local progress_label = progress_flow.add {
+        type = "label",
+        name = "drill_progress_label",
+        caption = "0/0"
+    }
+    progress_label.style.left_margin = 10
 
     -- Fetch and display mined resources for the current surface
     gui.update_drill_count(player)
@@ -151,61 +174,141 @@ function gui.update_drill_count(player)
     local selected_surface_name = surface_dropdown.get_item(surface_dropdown.selected_index)
 
     local resource_flow = main_frame.resource_flow
-    local surfaces_to_check = {}
-
-    if selected_surface_name == "All" then
-        for _, surface in pairs(game.surfaces) do
-            table.insert(surfaces_to_check, surface)
-        end
-    else
-        table.insert(surfaces_to_check, game.surfaces[selected_surface_name])
-    end
-
-    -- Get user-selected display interval (seconds/minutes/total)
-    -- local display_interval = player.mod_settings["drilly-resource-interval"].value
+    resource_flow.clear()
 
     local period_index = player.mod_settings["drilly-current-period-index"].value or 1
     local display_intervals = { "second", "minute", "hour", "total" }
-    player.print(display_intervals[period_index])
     local display_interval = display_intervals[period_index]
+    local time_button = main_frame.header_flow.drilly_time_toggle_button
+    time_button.tooltip = "Toggle time period (Current: " .. display_interval .. ")"
 
 
-    resource_flow.clear()
+    local surfaces_to_check = {}
+    if selected_surface_name == "All" then
+        for _, surface in pairs(game.surfaces) do
+            surfaces_to_check[surface.index] = true
+        end
+    else
+        local surface = game.surfaces[selected_surface_name]
+        if surface then
+            surfaces_to_check[surface.index] = true
+        end
+    end
 
-    for _, surface in pairs(surfaces_to_check) do
-        local resources = drill_utils.get_mined_resources(surface, display_interval, player)
-        local drill_data = drill_utils.get_drill_data(surface, player)
+    -- Aggregate data from global.drills
+    local resource_data = {}
 
-        for resource_name, resource_data in pairs(resources) do
-            local resource_line = resource_flow.add { type = "flow", direction = "horizontal" }
-            local sprite_type = game.item_prototypes[resource_name] and "item" or "entity"
-            local sprite = sprite_type .. "/" .. resource_name
+    for _, drill_data in pairs(global.drills) do
+        local drill = drill_data.entity
+        if not (drill and drill.valid) then
+            goto continue
+        end
 
+        if not surfaces_to_check[drill_data.surface_index] then
+            goto continue
+        end
+
+        for resource_name, res_info in pairs(drill_data.total_resources) do
+            if not resource_data[resource_name] then
+                resource_data[resource_name] = {
+                    total_amount = 0,
+                    drill_counts = {},
+                }
+            end
+
+            -- Calculate amount based on display interval
+            local amount = 0
+            if display_interval == "second" then
+                amount = res_info.yield_per_second
+            elseif display_interval == "minute" then
+                amount = res_info.yield_per_second * 60
+            elseif display_interval == "hour" then
+                amount = res_info.yield_per_second * 3600
+            elseif display_interval == "total" then
+                amount = res_info.amount
+            end
+
+            resource_data[resource_name].total_amount = resource_data[resource_name].total_amount + amount
+
+            -- Update drill counts
+            local drill_type = drill_data.name
+            local status = drill_data.status
+            if not resource_data[resource_name].drill_counts[drill_type] then
+                resource_data[resource_name].drill_counts[drill_type] = {}
+            end
+            if not resource_data[resource_name].drill_counts[drill_type][status] then
+                resource_data[resource_name].drill_counts[drill_type][status] = 0
+            end
+            resource_data[resource_name].drill_counts[drill_type][status] = resource_data[resource_name].drill_counts
+                [drill_type][status] + 1
+        end
+
+        ::continue::
+    end
+
+    -- Build the GUI elements
+    for resource_name, data in pairs(resource_data) do
+        local resource_line = resource_flow.add { type = "flow", direction = "horizontal" }
+        local sprite_type = game.item_prototypes[resource_name] and "item" or "entity"
+        local sprite = sprite_type .. "/" .. resource_name
+
+        if display_interval == "total" then
             resource_line.add {
                 type = "sprite-button",
                 sprite = sprite,
-                number = string.format("%.1f", resource_data.total_amount), -- Show the extraction rate or total
-                tooltip = resource_name .. ": " .. format_number_with_commas(resource_data.total_amount) ..
-                    (display_interval == "minute" and " units/min" or (display_interval == "second" and " units/s" or " total units"))
+                number = data.total_amount,
+                tooltip = resource_name .. ": " .. format_number_with_commas(data.total_amount),
+                style = "slot_button"
             }
+        else
+            local amount_number = tonumber(string.format("%.1f", data.total_amount))
+            resource_line.add {
+                type = "sprite-button",
+                sprite = sprite,
+                number = amount_number,
+                tooltip = resource_name .. ": " .. format_number_with_commas(data.total_amount),
+                style = "slot_button"
+            }
+        end
 
-            if drill_data[resource_name] then
-                for drill_type, status_counts in pairs(drill_data[resource_name]) do
-                    for drill_status, count in pairs(status_counts) do
-                        local status_style = get_status_style(drill_status)
-                        local status_name = get_status_name(drill_status)
+        -- Add drill buttons
+        for drill_type, statuses in pairs(data.drill_counts) do
+            for status, count in pairs(statuses) do
+                local status_style = get_status_style(status)
+                local status_name = get_status_name(status)
 
-                        resource_line.add {
-                            type = "sprite-button",
-                            sprite = "entity/" .. drill_type,
-                            number = count,
-                            tooltip = drill_type .. " (" .. status_name .. "): " .. count,
-                            style = status_style
-                        }
-                    end
-                end
+                resource_line.add {
+                    type = "sprite-button",
+                    sprite = "entity/" .. drill_type,
+                    number = count,
+                    tooltip = drill_type .. " (" .. status_name .. "): " .. count,
+                    style = status_style,
+                    -- Optionally include drill positions or other tags
+                }
             end
         end
+    end
+end
+
+-- Function to update the progress bar
+function gui.update_progress_bar(player, current_index, total_drills)
+    local main_frame = player.gui.screen.drill_inspector_frame
+    if not main_frame then
+        return
+    end
+
+    local progress_flow = main_frame.progress_flow
+    if not progress_flow then
+        return
+    end
+
+    local progress_bar = progress_flow.drill_progress_bar
+    local progress_label = progress_flow.drill_progress_label
+
+    if progress_bar and progress_label then
+        local progress = current_index / total_drills
+        progress_bar.value = progress
+        progress_label.caption = string.format("%d/%d", current_index, total_drills)
     end
 end
 
