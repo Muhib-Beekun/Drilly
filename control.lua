@@ -10,6 +10,7 @@ script.on_init(function()
     drill_utils.initialize_drills()
     for _, player in pairs(game.players) do
         drilly_button.create_drilly_button_if_needed(player)
+        gui.update_surface_dropdown(player)
     end
 end)
 
@@ -18,21 +19,25 @@ script.on_configuration_changed(function(event)
     drill_utils.initialize_drills()
     for _, player in pairs(game.players) do
         drilly_button.create_drilly_button_if_needed(player)
+        gui.update_surface_dropdown(player)
     end
 end)
 
 -- Handle changes when a player joins
 script.on_event(defines.events.on_player_joined_game, function(event)
     local player = game.get_player(event.player_index)
-    drilly_button.create_drilly_button_if_needed(player)
     drill_utils.initialize_drills()
+    drilly_button.create_drilly_button_if_needed(player)
+    gui.update_surface_dropdown(player)
 end
 )
 
 script.on_event(defines.events.on_player_created, function(event)
     local player = game.get_player(event.player_index)
     if player then
+        drill_utils.initialize_drills()
         drilly_button.create_drilly_button_if_needed(player)
+        gui.update_surface_dropdown(player)
     end
 end)
 
@@ -40,8 +45,9 @@ end)
 commands.add_command("drilly", "Forces the creation of the Drilly button", function(event)
     local player = game.get_player(event.player_index)
     if player then
-        drilly_button.create_drilly_button_if_needed(player)
         drill_utils.initialize_drills()
+        drilly_button.create_drilly_button_if_needed(player)
+        gui.update_surface_dropdown(player)
     end
 end)
 
@@ -91,6 +97,7 @@ script.on_event(defines.events.on_tick, function(event)
         for _, player in pairs(game.connected_players) do
             if player.gui.screen.drill_inspector_frame then
                 gui.update_drill_count(player)
+                gui.update_surface_dropdown(player)
                 gui.update_progress_bar(player, global.drill_processing_index - 1, total_drills)
             end
         end
