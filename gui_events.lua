@@ -1,3 +1,5 @@
+--gui_events.lua
+
 local gui = require("gui")
 
 -- Function to handle GUI clicks (for both refresh and close buttons)
@@ -22,7 +24,7 @@ script.on_event(defines.events.on_gui_click, function(event)
                 if player.gui.screen.drill_inspector_frame then
                     player.gui.screen.drill_inspector_frame.destroy() -- Close the GUI if it's open
                 else
-                    gui.create_gui(player)                        -- Open the GUI if it's not open
+                    gui.create_gui(player)                            -- Open the GUI if it's not open
                 end
             elseif event.element.name == "drilly_time_toggle_button" then
                 local time_periods = { "S", "M", "H", "T" }
@@ -34,5 +36,14 @@ script.on_event(defines.events.on_gui_click, function(event)
                 gui.update_drill_count(player)
             end
         end
+    end
+end)
+
+script.on_event(defines.events.on_gui_selection_state_changed, function(event)
+    local element = event.element
+    local player = game.get_player(event.player_index)
+
+    if element and element.valid and element.name == "surface_dropdown" then
+        gui.update_drill_count(player)
     end
 end)
