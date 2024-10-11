@@ -83,6 +83,10 @@ function drill_utils.update_drill_data(drill_data)
         end
     end
 
+    local base_productivity = drill.prototype.base_productivity or 0
+    local productivity_bonus = drill.productivity_bonus or 0
+    drill_data.productivity_bonus = 1 + base_productivity + productivity_bonus
+
     -- If no valid resources, set yield per second to zero
     if next(valid_resources) == nil then
         drill_data.yield_per_second = 0
@@ -116,9 +120,9 @@ function drill_utils.update_drill_data(drill_data)
         local fraction_R = num_tiles_R / total_resource_tiles
 
         -- Adjust the yield per second for this resource
-        yield_per_second = yield_per_second * fraction_R
+        local frac_yield_per_second = yield_per_second * fraction_R
 
-        total_yield_per_second = total_yield_per_second + yield_per_second
+        total_yield_per_second = total_yield_per_second + frac_yield_per_second
 
         -- Sum total amounts of this resource, adjusting for overlapping drills
         local total_amount = 0
@@ -131,15 +135,13 @@ function drill_utils.update_drill_data(drill_data)
 
         -- Store per-resource data
         total_resources[resource_name] = {
-            amount = total_amount,
+            amount = total_amount * drill_data.productivity_bonus,
             yield_per_second = yield_per_second,
         }
     end
 
     drill_data.yield_per_second = total_yield_per_second
     drill_data.total_resources = total_resources
-    drill_data.productivity_bonus = drill.effects and drill.effects.productivity and drill.effects.productivity.bonus or
-        0
     drill_data.last_updated_tick = game.tick
 end
 
@@ -158,7 +160,7 @@ function drill_utils.calculate_regular_miner_yield(drill, resource)
     end
 
     -- Apply speed bonuses
-    local speed_bonus = drill.effects and drill.effects.speed and drill.effects.speed.bonus or 0
+    local speed_bonus = drill.speed_bonus or 0
     local actual_mining_speed = base_mining_speed * (1 + speed_bonus)
 
     -- Apply productivity bonuses
@@ -247,12 +249,12 @@ function drill_utils.calculate_core_miner_yield(drill, resource)
     end
 
     -- Apply speed bonuses
-    local speed_bonus = drill.effects and drill.effects.speed and drill.effects.speed.bonus or 0
+    local speed_bonus = drill.speed_bonus or 0
     local actual_mining_speed = base_mining_speed * (1 + speed_bonus)
 
     -- Apply productivity bonuses
     local base_productivity = drill.prototype.base_productivity or 0
-    local productivity_bonus = drill.effects and drill.effects.productivity and drill.effects.productivity.bonus or 0
+    local productivity_bonus = drill.productivity_bonus or 0
     local effective_productivity = 1 + base_productivity + productivity_bonus
 
     -- Calculate yield per second

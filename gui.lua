@@ -6,11 +6,27 @@ local gui = {}
 
 -- Utility: Format numbers with commas
 local function format_number_with_commas(number)
-    -- Round the number to 4 decimal digits
-    local formatted = string.format("%.4f", number)
+    -- Convert the number to string to analyze its decimal part
+    local formatted = tostring(number)
 
-    -- Separate integer and decimal parts
+    -- Separate integer and decimal parts (if any)
     local integer_part, decimal_part = string.match(formatted, "(%-?%d+)(%.%d+)")
+
+    -- Check if the number has a decimal part
+    if decimal_part then
+        -- Check the length of the decimal part (excluding the decimal point)
+        local decimal_digits = string.sub(decimal_part, 2)
+        if #decimal_digits > 4 then
+            -- Round the number to 4 decimal places
+            formatted = string.format("%.4f", number)
+            -- Update the integer and decimal parts after rounding
+            integer_part, decimal_part = string.match(formatted, "(%-?%d+)(%.%d+)")
+        end
+    else
+        -- No decimal part, use the integer part as is
+        integer_part = formatted
+        decimal_part = ""
+    end
 
     -- Insert commas into the integer part
     local k
@@ -21,8 +37,9 @@ local function format_number_with_commas(number)
     end
 
     -- Reconstruct the formatted number
-    return formatted_int .. decimal_part
+    return formatted_int .. (decimal_part or "")
 end
+
 
 
 
@@ -223,7 +240,7 @@ function gui.update_drill_count(player)
             if not resource_data[resource_name] then
                 resource_data[resource_name] = {
                     total_amount = 0,
-                    drill_counts = {},
+                    drill_data_by_type = {},
                 }
             end
 
@@ -241,17 +258,33 @@ function gui.update_drill_count(player)
 
             resource_data[resource_name].total_amount = resource_data[resource_name].total_amount + amount
 
-            -- Update drill counts
+            -- Update drill data by type and status
             local drill_type = drill_data.name
             local status = drill_data.status
-            if not resource_data[resource_name].drill_counts[drill_type] then
-                resource_data[resource_name].drill_counts[drill_type] = {}
+            if not resource_data[resource_name].drill_data_by_type[drill_type] then
+                resource_data[resource_name].drill_data_by_type[drill_type] = {}
             end
-            if not resource_data[resource_name].drill_counts[drill_type][status] then
-                resource_data[resource_name].drill_counts[drill_type][status] = 0
+            if not resource_data[resource_name].drill_data_by_type[drill_type][status] then
+                resource_data[resource_name].drill_data_by_type[drill_type][status] = 0
             end
-            resource_data[resource_name].drill_counts[drill_type][status] = resource_data[resource_name].drill_counts
-                [drill_type][status] + 1
+
+            if display_interval == "total" then
+                -- Sum drills
+                resource_data[resource_name].drill_data_by_type[drill_type][status] = resource_data[resource_name]
+                    .drill_data_by_type[drill_type][status] + 1
+            else
+                -- Sum yields
+                local yield_amount = 0
+                if display_interval == "second" then
+                    yield_amount = res_info.yield_per_second
+                elseif display_interval == "minute" then
+                    yield_amount = res_info.yield_per_second * 60
+                elseif display_interval == "hour" then
+                    yield_amount = res_info.yield_per_second * 3600
+                end
+                resource_data[resource_name].drill_data_by_type[drill_type][status] = resource_data[resource_name]
+                    .drill_data_by_type[drill_type][status] + yield_amount
+            end
         end
 
         ::continue::
@@ -268,7 +301,7 @@ function gui.update_drill_count(player)
                 type = "sprite-button",
                 sprite = sprite,
                 number = data.total_amount,
-                tooltip = resource_name .. ": " .. format_number_with_commas(data.total_amount),
+                tooltip = resource_name .. ": " .. format_number_with_commas(data.total_amount) .. "\nProductivity Bonus Applied",
                 style = "slot_button"
             }
         else
@@ -277,25 +310,37 @@ function gui.update_drill_count(player)
                 type = "sprite-button",
                 sprite = sprite,
                 number = amount_number,
-                tooltip = resource_name .. ": " .. format_number_with_commas(data.total_amount),
+                tooltip = resource_name .. ": " .. format_number_with_commas(data.total_amount) .. "\nProductivity Bonus Applied",
                 style = "slot_button"
             }
         end
 
         -- Add drill buttons
-        for drill_type, statuses in pairs(data.drill_counts) do
-            for status, count in pairs(statuses) do
+        for drill_type, statuses in pairs(data.drill_data_by_type) do
+            for status, value in pairs(statuses) do
                 local status_style = get_status_style(status)
                 local status_name = get_status_name(status)
 
-                resource_line.add {
-                    type = "sprite-button",
-                    sprite = "entity/" .. drill_type,
-                    number = count,
-                    tooltip = drill_type .. " (" .. status_name .. "): " .. count,
-                    style = status_style,
-                    -- Optionally include drill positions or other tags
-                }
+                if display_interval == "total" then
+                    -- Display drill counts
+                    resource_line.add {
+                        type = "sprite-button",
+                        sprite = "entity/" .. drill_type,
+                        number = value,
+                        tooltip = drill_type .. " (" .. status_name .. "): " .. value,
+                        style = status_style,
+                    }
+                else
+                    -- Display summed yields
+                    -- local yield_number = tonumber(string.format("%.4f", value))
+                    resource_line.add {
+                        type = "sprite-button",
+                        sprite = "entity/" .. drill_type,
+                        number = value,
+                        tooltip = drill_type .. " (" .. status_name .. "): " .. format_number_with_commas(value) .. " per " .. display_interval,
+                        style = status_style,
+                    }
+                end
             end
         end
     end
