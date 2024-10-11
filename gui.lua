@@ -96,22 +96,13 @@ function gui.create_gui(player)
     local surface_dropdown = header_flow.add {
         type = "drop-down",
         name = "surface_dropdown",
-        items = { "All" },
+        items = { "By Surface", "Aggregate" },
         selected_index = 1,
         style = "dropdown",
     }
     surface_dropdown.style.width = 150
     surface_dropdown.style.height = 30
 
-    -- Add all available surfaces to the dropdown
-    local index_counter = 2
-    for _, surface in pairs(game.surfaces) do
-        surface_dropdown.add_item(surface.name)
-        if surface.name == player.surface.name then
-            surface_dropdown.selected_index = index_counter -- Select the current surface by default
-        end
-        index_counter = index_counter + 1
-    end
 
     -- Add time period toggle button
     local time_periods = { "S", "M", "H", "T" }
@@ -199,7 +190,7 @@ function gui.update_drill_count(player)
 
     local header_flow = main_frame.header_flow
     local surface_dropdown = header_flow.surface_dropdown
-    local selected_surface_name = surface_dropdown.get_item(surface_dropdown.selected_index)
+    local selected_option = surface_dropdown.get_item(surface_dropdown.selected_index)
 
     local resource_flow = main_frame.resource_flow
     resource_flow.clear()
@@ -210,19 +201,6 @@ function gui.update_drill_count(player)
     local time_button = main_frame.header_flow.drilly_time_toggle_button
     time_button.tooltip = "Toggle time period (Current: " .. display_interval .. ")"
 
-
-    local surfaces_to_check = {}
-    if selected_surface_name == "All" then
-        for _, surface in pairs(game.surfaces) do
-            surfaces_to_check[surface.index] = true
-        end
-    else
-        local surface = game.surfaces[selected_surface_name]
-        if surface then
-            surfaces_to_check[surface.index] = true
-        end
-    end
-
     -- Aggregate data from global.drills
     local resource_data = {}
 
@@ -232,13 +210,33 @@ function gui.update_drill_count(player)
             goto continue
         end
 
-        if not surfaces_to_check[drill_data.surface_index] then
-            goto continue
+        -- Get the surface index and name
+        local surface_index = drill_data.surface_index
+        local surface_name = game.surfaces[surface_index].name
+
+        local key = nil -- Key for grouping data
+
+        if selected_option == "By Surface" then
+            -- Group by surface
+            key = surface_name
+        elseif selected_option == "Aggregate" then
+            -- Combine data from all surfaces
+            key = "Aggregate"
+        else
+            -- Selected a specific surface
+            if surface_name ~= selected_option then
+                goto continue -- Skip drills not on the selected surface
+            end
+            key = surface_name
+        end
+
+        if not resource_data[key] then
+            resource_data[key] = {}
         end
 
         for resource_name, res_info in pairs(drill_data.total_resources) do
-            if not resource_data[resource_name] then
-                resource_data[resource_name] = {
+            if not resource_data[key][resource_name] then
+                resource_data[key][resource_name] = {
                     total_amount = 0,
                     drill_data_by_type = {},
                 }
@@ -256,34 +254,27 @@ function gui.update_drill_count(player)
                 amount = res_info.amount
             end
 
-            resource_data[resource_name].total_amount = resource_data[resource_name].total_amount + amount
+            resource_data[key][resource_name].total_amount = resource_data[key][resource_name].total_amount + amount
 
             -- Update drill data by type and status
             local drill_type = drill_data.name
             local status = drill_data.status
-            if not resource_data[resource_name].drill_data_by_type[drill_type] then
-                resource_data[resource_name].drill_data_by_type[drill_type] = {}
+            local drill_data_by_type = resource_data[key][resource_name].drill_data_by_type
+
+            if not drill_data_by_type[drill_type] then
+                drill_data_by_type[drill_type] = {}
             end
-            if not resource_data[resource_name].drill_data_by_type[drill_type][status] then
-                resource_data[resource_name].drill_data_by_type[drill_type][status] = 0
+            if not drill_data_by_type[drill_type][status] then
+                drill_data_by_type[drill_type][status] = 0
             end
 
             if display_interval == "total" then
                 -- Sum drills
-                resource_data[resource_name].drill_data_by_type[drill_type][status] = resource_data[resource_name]
-                    .drill_data_by_type[drill_type][status] + 1
+                drill_data_by_type[drill_type][status] = drill_data_by_type[drill_type][status] + 1
             else
                 -- Sum yields
-                local yield_amount = 0
-                if display_interval == "second" then
-                    yield_amount = res_info.yield_per_second
-                elseif display_interval == "minute" then
-                    yield_amount = res_info.yield_per_second * 60
-                elseif display_interval == "hour" then
-                    yield_amount = res_info.yield_per_second * 3600
-                end
-                resource_data[resource_name].drill_data_by_type[drill_type][status] = resource_data[resource_name]
-                    .drill_data_by_type[drill_type][status] + yield_amount
+                local yield_amount = amount -- Already calculated above
+                drill_data_by_type[drill_type][status] = drill_data_by_type[drill_type][status] + yield_amount
             end
         end
 
@@ -291,53 +282,45 @@ function gui.update_drill_count(player)
     end
 
     -- Build the GUI elements
-    for resource_name, data in pairs(resource_data) do
-        local resource_line = resource_flow.add { type = "flow", direction = "horizontal" }
-        local sprite_type = game.item_prototypes[resource_name] and "item" or "entity"
-        local sprite = sprite_type .. "/" .. resource_name
+    for key, resources in pairs(resource_data) do
+        if selected_option == "By Surface" then
+            -- Add a label for the surface name
+            resource_flow.add { type = "label", caption = "Surface: " .. key, style = "heading_2_label" }
+        end
 
-        if display_interval == "total" then
-            resource_line.add {
-                type = "sprite-button",
-                sprite = sprite,
-                number = data.total_amount,
-                tooltip = resource_name .. ": " .. format_number_with_commas(data.total_amount) .. "\nProductivity Bonus Applied",
-                style = "slot_button"
-            }
-        else
-            local amount_number = tonumber(string.format("%.1f", data.total_amount))
+        for resource_name, data in pairs(resources) do
+            local resource_line = resource_flow.add { type = "flow", direction = "horizontal" }
+            local sprite_type = game.item_prototypes[resource_name] and "item" or "entity"
+            local sprite = sprite_type .. "/" .. resource_name
+
+            -- Format the total amount
+            local amount_number = tonumber(string.format("%.4f", data.total_amount))
+            local formatted_amount = format_number_with_commas(amount_number)
+
+            -- Add the resource button
             resource_line.add {
                 type = "sprite-button",
                 sprite = sprite,
                 number = amount_number,
-                tooltip = resource_name .. ": " .. format_number_with_commas(data.total_amount) .. "\nProductivity Bonus Applied",
+                tooltip = resource_name .. ": " .. formatted_amount .. (display_interval == "total" and "\nProductivity Bonus Applied" or " per " .. display_interval),
                 style = "slot_button"
             }
-        end
 
-        -- Add drill buttons
-        for drill_type, statuses in pairs(data.drill_data_by_type) do
-            for status, value in pairs(statuses) do
-                local status_style = get_status_style(status)
-                local status_name = get_status_name(status)
+            -- Add drill buttons
+            for drill_type, statuses in pairs(data.drill_data_by_type) do
+                for status, value in pairs(statuses) do
+                    local status_style = get_status_style(status)
+                    local status_name = get_status_name(status)
 
-                if display_interval == "total" then
-                    -- Display drill counts
+                    local display_value = tonumber(string.format("%.4f", value))
+                    local formatted_value = format_number_with_commas(display_value)
+                    local tooltip_suffix = display_interval == "total" and "" or " per " .. display_interval
+
                     resource_line.add {
                         type = "sprite-button",
                         sprite = "entity/" .. drill_type,
-                        number = value,
-                        tooltip = drill_type .. " (" .. status_name .. "): " .. value,
-                        style = status_style,
-                    }
-                else
-                    -- Display summed yields
-                    -- local yield_number = tonumber(string.format("%.4f", value))
-                    resource_line.add {
-                        type = "sprite-button",
-                        sprite = "entity/" .. drill_type,
-                        number = value,
-                        tooltip = drill_type .. " (" .. status_name .. "): " .. format_number_with_commas(value) .. " per " .. display_interval,
+                        number = display_value,
+                        tooltip = drill_type .. " (" .. status_name .. "): " .. formatted_value .. tooltip_suffix,
                         style = status_style,
                     }
                 end
@@ -365,6 +348,108 @@ function gui.update_progress_bar(player, current_index, total_drills)
         local progress = current_index / total_drills
         progress_bar.value = progress
         progress_label.caption = string.format("%d/%d", current_index, total_drills)
+    end
+end
+
+function gui.update_surface_dropdown(player)
+    local main_frame = player.gui.screen.drill_inspector_frame
+    if not main_frame then
+        return
+    end
+    local header_flow = main_frame.header_flow
+    local surface_dropdown = header_flow.surface_dropdown
+    if not surface_dropdown then
+        player.print("Error: Drilly surface dropdown not found.")
+        return
+    end
+
+    -- Get the player's current surface name
+    local player_surface_name = player.surface.name
+
+    -- Build the set of surfaces with drills
+    local surfaces_with_drills = {}
+    for _, drill_data in pairs(global.drills) do
+        local surface_index = drill_data.surface_index
+        local surface = game.surfaces[surface_index]
+        if surface then
+            surfaces_with_drills[surface.name] = true
+        end
+    end
+
+    -- Always include the player's current surface, even if it has no drills
+    surfaces_with_drills[player_surface_name] = true
+
+    -- Build the desired list of items
+    local desired_items = { "By Surface", "Aggregate" }
+
+    -- Collect and sort surface names
+    local surface_names = {}
+    for surface_name in pairs(surfaces_with_drills) do
+        table.insert(surface_names, surface_name)
+    end
+    table.sort(surface_names)
+
+    -- Append surface names to the desired items
+    for _, surface_name in ipairs(surface_names) do
+        table.insert(desired_items, surface_name)
+    end
+
+    -- Get the current items in the dropdown
+    local current_items = surface_dropdown.items
+
+    -- Build a map of current items for quick lookup
+    local current_items_map = {}
+    for index, item in ipairs(current_items) do
+        current_items_map[item] = index
+    end
+
+    -- Build a map of desired items for quick lookup
+    local desired_items_map = {}
+    for index, item in ipairs(desired_items) do
+        desired_items_map[item] = index
+    end
+
+    -- Add new surfaces to the dropdown
+    for index, item in ipairs(desired_items) do
+        if not current_items_map[item] then
+            -- Item is not in the current dropdown, add it at the correct index
+            surface_dropdown.add_item(item, index)
+            current_items_map[item] = index
+        end
+    end
+
+    -- Remove surfaces that are no longer needed
+    -- Iterate from the end to avoid index shifting
+    for index = #current_items, 1, -1 do
+        local item = current_items[index]
+        if not desired_items_map[item] and item ~= "By Surface" and item ~= "Aggregate" then
+            -- Remove the item
+            surface_dropdown.remove_item(index)
+            current_items_map[item] = nil
+        end
+    end
+
+    -- Ensure the order of items matches the desired order
+    for desired_index, desired_item in ipairs(desired_items) do
+        local current_item = surface_dropdown.get_item(desired_index)
+        if current_item ~= desired_item then
+            -- Update the item at this index
+            surface_dropdown.set_item(desired_index, desired_item)
+        end
+    end
+
+    -- Update the selected index if necessary
+    local selected_index = surface_dropdown.selected_index
+    local selected_item = surface_dropdown.get_item(selected_index)
+
+    if not desired_items_map[selected_item] then
+        -- Selected item has been removed, set selection to "By Surface"
+        for index, item in ipairs(surface_dropdown.items) do
+            if item == "By Surface" then
+                surface_dropdown.selected_index = index
+                break
+            end
+        end
     end
 end
 
