@@ -161,21 +161,6 @@ function gui.create_gui(player)
     }
     progress_flow.style.vertical_align = "center"
 
-    local progress_bar = progress_flow.add {
-        type = "progressbar",
-        name = "drill_progress_bar",
-        value = 0
-    }
-    progress_bar.style.horizontally_stretchable = true
-    progress_bar.style.width = 200
-
-    local progress_label = progress_flow.add {
-        type = "label",
-        name = "drill_progress_label",
-        caption = "0/0"
-    }
-    progress_label.style.left_margin = 10
-
     -- Fetch and display mined resources for the current surface
     gui.update_drill_count(player)
 end
@@ -343,6 +328,38 @@ function gui.update_progress_bar(player, current_index, total_drills)
 
     local progress_bar = progress_flow.drill_progress_bar
     local progress_label = progress_flow.drill_progress_label
+
+    if not progress_bar and global.initial_update then
+        progress_bar = progress_flow.add {
+            type = "progressbar",
+            name = "drill_progress_bar",
+            value = 0
+        }
+        progress_bar.style.horizontally_stretchable = true
+        progress_bar.style.width = 200
+    end
+
+    if not progress_label and global.initial_update then
+        progress_label = progress_flow.add {
+            type = "label",
+            name = "drill_progress_label",
+            caption = "0/0"
+        }
+        progress_label.style.left_margin = 10
+    end
+
+    if progress_label and not global.initial_update then
+        progress_label.destroy()
+    end
+
+    if progress_bar and not global.initial_update then
+        progress_bar.destroy()
+    end
+
+    if not global.initial_update then
+        return
+    end
+
 
     if progress_bar and progress_label then
         local progress = current_index / total_drills
