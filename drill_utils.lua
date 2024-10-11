@@ -106,12 +106,27 @@ function drill_utils.update_drill_data(drill_data)
             yield_per_second = drill_utils.calculate_regular_miner_yield(drill, resource)
         end
 
+        -- Adjust the yield per second based on the fraction of resource tiles
+        -- For drills covering multiple resource types, distribute mining speed proportionally
+        local num_tiles_R = #resources
+        local total_resource_tiles = 0
+        for _, res_list in pairs(valid_resources) do
+            total_resource_tiles = total_resource_tiles + #res_list
+        end
+        local fraction_R = num_tiles_R / total_resource_tiles
+
+        -- Adjust the yield per second for this resource
+        yield_per_second = yield_per_second * fraction_R
+
         total_yield_per_second = total_yield_per_second + yield_per_second
 
-        -- Sum total amounts of this resource
+        -- Sum total amounts of this resource, adjusting for overlapping drills
         local total_amount = 0
         for _, res in pairs(resources) do
-            total_amount = total_amount + (res.amount or 0)
+            local num_drills_covering = drill_utils.count_drills_covering_resource(res)
+            -- Adjust the resource amount by dividing by the number of drills covering it
+            local adjusted_amount = (res.amount or 0) / num_drills_covering
+            total_amount = total_amount + adjusted_amount
         end
 
         -- Store per-resource data
