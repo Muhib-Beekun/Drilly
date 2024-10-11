@@ -6,14 +6,25 @@ local gui = {}
 
 -- Utility: Format numbers with commas
 local function format_number_with_commas(number)
-    local formatted = tostring(number)
+    -- Round the number to 4 decimal digits
+    local formatted = string.format("%.4f", number)
+
+    -- Separate integer and decimal parts
+    local integer_part, decimal_part = string.match(formatted, "(%-?%d+)(%.%d+)")
+
+    -- Insert commas into the integer part
     local k
+    local formatted_int = integer_part
     while true do
-        formatted, k = string.gsub(formatted, "^(-?%d+)(%d%d%d)", '%1,%2')
+        formatted_int, k = string.gsub(formatted_int, "^(-?%d+)(%d%d%d)", '%1,%2')
         if k == 0 then break end
     end
-    return formatted
+
+    -- Reconstruct the formatted number
+    return formatted_int .. decimal_part
 end
+
+
 
 -- Function to get the status name from the status value
 local function get_status_name(status_value)
