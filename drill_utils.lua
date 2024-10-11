@@ -4,19 +4,31 @@ local drill_utils = {}
 
 -- Initialize the global tables
 function drill_utils.initialize_drills()
-    global.drills = {}
-    global.drill_unit_numbers = {}
-    global.drill_processing_index = 1
-    global.surface_data = {} -- For caching per-surface data
-
+    game.print("initialize_drills")
+    global.drills = global.drills or {}
+    global.drill_unit_numbers = global.drill_unit_numbers or {}
+    global.drill_processing_index = global.drill_processing_index or 1
+    global.initial_update = global.initial_update or true
+    global.surface_data = global.surface_data or {}                                   -- For caching per-surface data
+    global.minable_entities = global.minable_entities or
+    {}                                                                                -- Initialize global minable entities table
     for _, surface in pairs(game.surfaces) do
+        global.surface_data[surface.index] = global.surface_data[surface.index] or {} -- Initialize per-surface data
+
         local drills = surface.find_entities_filtered { type = "mining-drill", force = game.forces.player }
-        global.surface_data[surface.index] = {} -- Initialize per-surface data
 
         for _, drill in pairs(drills) do
-            if drill.valid then
+            if drill.valid and not global.drills[drill.unit_number] then
                 drill_utils.add_drill(drill)
             end
+        end
+    end
+
+    -- Remove drills that no longer exist
+    for unit_number, drill_data in pairs(global.drills) do
+        local drill = drill_data.entity
+        if not (drill and drill.valid) then
+            drill_utils.remove_drill(drill)
         end
     end
 end
@@ -36,6 +48,9 @@ function drill_utils.add_drill(drill)
     }
     global.drills[drill.unit_number] = drill_data
     table.insert(global.drill_unit_numbers, drill.unit_number)
+
+    -- Update minable_entities
+    drill_utils.update_minable_entities_for_drill(drill, true)
 end
 
 -- Function to remove a drill from global.drills
@@ -48,10 +63,18 @@ function drill_utils.remove_drill(drill)
             break
         end
     end
+
+    -- Update global.minable_entities to remove the drill from any resource entities it covers
+    drill_utils.update_minable_entities_for_drill(drill, false)
 end
 
 -- Function to update a single drill's data
 function drill_utils.update_drill_data(drill_data)
+    if not global.minable_entities then
+        game.print("drill_utils.update_drill_data not global.minable_entities initalized drilly mod")
+        drill_utils.initialize_drills()
+    end
+
     local drill = drill_data.entity
     if not (drill and drill.valid) then
         -- Remove invalid drills
@@ -59,10 +82,18 @@ function drill_utils.update_drill_data(drill_data)
         return
     end
 
+
+
+
     -- Update status
     drill_data.status = drill.status
 
-    -- Calculate mining area
+    -- Update productivity bonus
+    local base_productivity = drill.prototype.base_productivity or 0
+    local productivity_bonus = drill.productivity_bonus or 0
+    drill_data.productivity_bonus = 1 + base_productivity + productivity_bonus
+
+    -- Get the list of resource entities covered by this drill
     local mining_radius = drill.prototype.mining_drill_radius or 0
     local mining_area = {
         left_top = { x = drill.position.x - mining_radius, y = drill.position.y - mining_radius },
@@ -82,10 +113,6 @@ function drill_utils.update_drill_data(drill_data)
             table.insert(valid_resources[resource_name], resource)
         end
     end
-
-    local base_productivity = drill.prototype.base_productivity or 0
-    local productivity_bonus = drill.productivity_bonus or 0
-    drill_data.productivity_bonus = 1 + base_productivity + productivity_bonus
 
     -- If no valid resources, set yield per second to zero
     if next(valid_resources) == nil then
@@ -111,7 +138,6 @@ function drill_utils.update_drill_data(drill_data)
         end
 
         -- Adjust the yield per second based on the fraction of resource tiles
-        -- For drills covering multiple resource types, distribute mining speed proportionally
         local num_tiles_R = #resources
         local total_resource_tiles = 0
         for _, res_list in pairs(valid_resources) do
@@ -127,11 +153,24 @@ function drill_utils.update_drill_data(drill_data)
         -- Sum total amounts of this resource, adjusting for overlapping drills
         local total_amount = 0
         for _, res in pairs(resources) do
-            local num_drills_covering = drill_utils.count_drills_covering_resource(res)
+            local resource_key = (res.surface.index .. "_" .. res.position.x .. "_" .. res.position.y)
+            if not global.minable_entities[resource_key] then
+                drill_utils.update_minable_entities_for_drill(drill, true)
+            end
+            local drills_covering = global.minable_entities[resource_key] and
+                global.minable_entities[resource_key].drills or {}
+            local num_drills_covering = 0
+            for _ in pairs(drills_covering) do
+                num_drills_covering = num_drills_covering + 1
+            end
             -- Adjust the resource amount by dividing by the number of drills covering it
             local adjusted_amount = (res.amount or 0) / num_drills_covering
+            --game.print("res.amount = " .. tostring(res.amount))
+            --game.print("num_drills_covering = " .. tostring(num_drills_covering))
+            --game.print("Adjusted amount for " .. res.name .. " is " .. tostring(adjusted_amount))
             total_amount = total_amount + adjusted_amount
         end
+
 
         -- Store per-resource data
         total_resources[resource_name] = {
@@ -265,50 +304,41 @@ function drill_utils.calculate_core_miner_yield(drill, resource)
     return yield_per_second
 end
 
--- Function to count the number of drills covering a resource tile
-function drill_utils.count_drills_covering_resource(resource)
-    local surface = resource.surface
-    local resource_position = resource.position
-
-    -- Define search area around the resource position
-    local search_radius = 10 -- Adjust as needed for performance
-    local area = {
-        left_top = { x = resource_position.x - search_radius, y = resource_position.y - search_radius },
-        right_bottom = { x = resource_position.x + search_radius, y = resource_position.y + search_radius }
+function drill_utils.update_minable_entities_for_drill(drill, is_adding)
+    local mining_radius = drill.prototype.mining_drill_radius or 0
+    local mining_area = {
+        left_top = { x = drill.position.x - mining_radius, y = drill.position.y - mining_radius },
+        right_bottom = { x = drill.position.x + mining_radius, y = drill.position.y + mining_radius }
     }
 
-    -- Find mining drills in the area
-    local nearby_drills = surface.find_entities_filtered { area = area, type = "mining-drill" }
+    local surface = drill.surface
+    local resource_entities = surface.find_entities_filtered { area = mining_area, type = "resource" }
 
-    local count = 0
+    -- Filter resources that the drill can mine
+    local mining_categories = drill.prototype.resource_categories
+    for _, resource in pairs(resource_entities) do
+        if mining_categories[resource.prototype.resource_category] then
+            local resource_key = (resource.surface.index .. "_" .. resource.position.x .. "_" .. resource.position.y)
+            if not global.minable_entities[resource_key] then
+                global.minable_entities[resource_key] = {
+                    entity = resource,
+                    drills = {},
+                }
+            end
 
-    for _, drill in pairs(nearby_drills) do
-        if drill.valid then
-            -- Get drill mining area
-            local mining_radius = drill.prototype.mining_drill_radius or 0
-            local mining_area = {
-                left_top = { x = drill.position.x - mining_radius, y = drill.position.y - mining_radius },
-                right_bottom = { x = drill.position.x + mining_radius, y = drill.position.y + mining_radius }
-            }
-
-            -- Check if resource position is within the mining area
-            if resource_position.x >= mining_area.left_top.x and resource_position.x <= mining_area.right_bottom.x
-                and resource_position.y >= mining_area.left_top.y and resource_position.y <= mining_area.right_bottom.y then
-                -- Check if the drill can mine this resource
-                local mining_categories = drill.prototype.resource_categories
-                if mining_categories[resource.prototype.resource_category] then
-                    count = count + 1
+            if is_adding then
+                -- Add the drill to the list if not already present
+                global.minable_entities[resource_key].drills[drill.unit_number] = true
+            else
+                -- Remove the drill from the list
+                global.minable_entities[resource_key].drills[drill.unit_number] = nil
+                -- Clean up if no drills left
+                if not next(global.minable_entities[resource_key].drills) then
+                    global.minable_entities[resource_key] = nil
                 end
             end
         end
     end
-
-    -- Ensure count is at least 1 to avoid division by zero
-    if count == 0 then
-        count = 1
-    end
-
-    return count
 end
 
 return drill_utils
