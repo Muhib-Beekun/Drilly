@@ -77,7 +77,9 @@ function drill_utils.update_drill_data(drill_data)
     local valid_resources = {}
     for _, resource in pairs(resource_entities) do
         if mining_categories[resource.prototype.resource_category] then
-            valid_resources[resource.name] = resource
+            local resource_name = resource.name
+            valid_resources[resource_name] = valid_resources[resource_name] or {}
+            table.insert(valid_resources[resource_name], resource)
         end
     end
 
@@ -89,29 +91,38 @@ function drill_utils.update_drill_data(drill_data)
         return
     end
 
-    -- Choose any valid resource to calculate yield per second
-    local resource_name = next(valid_resources)
-    local resource = valid_resources[resource_name]
-
-    -- Calculate yield per second for the drill
-    local yield_per_second = 0
-
-    if script.active_mods["space-exploration"] and drill.name == "se-core-miner-drill" then
-        yield_per_second = drill_utils.calculate_core_miner_yield(drill, resource)
-    else
-        yield_per_second = drill_utils.calculate_regular_miner_yield(drill, resource)
-    end
-
-    -- Sum total resource amounts (without duplication)
+    -- Calculate yield per second per resource
+    local total_yield_per_second = 0
     local total_resources = {}
-    local total_amounts = {}
-    for _, resource in pairs(valid_resources) do
-        local r_name = resource.name
-        total_amounts[r_name] = (total_amounts[r_name] or 0) + (resource.amount or 0)
+    for resource_name, resources in pairs(valid_resources) do
+        -- Choose one resource entity to use in calculations
+        local resource = resources[1]
+
+        -- Calculate yield per second for this resource
+        local yield_per_second = 0
+        if script.active_mods["space-exploration"] and drill.name == "se-core-miner-drill" then
+            yield_per_second = drill_utils.calculate_core_miner_yield(drill, resource)
+        else
+            yield_per_second = drill_utils.calculate_regular_miner_yield(drill, resource)
+        end
+
+        total_yield_per_second = total_yield_per_second + yield_per_second
+
+        -- Sum total amounts of this resource
+        local total_amount = 0
+        for _, res in pairs(resources) do
+            total_amount = total_amount + (res.amount or 0)
+        end
+
+        -- Store per-resource data
+        total_resources[resource_name] = {
+            amount = total_amount,
+            yield_per_second = yield_per_second,
+        }
     end
 
-    drill_data.yield_per_second = yield_per_second
-    drill_data.total_resources = total_amounts
+    drill_data.yield_per_second = total_yield_per_second
+    drill_data.total_resources = total_resources
     drill_data.productivity_bonus = drill.effects and drill.effects.productivity and drill.effects.productivity.bonus or
         0
     drill_data.last_updated_tick = game.tick
@@ -137,8 +148,9 @@ function drill_utils.calculate_regular_miner_yield(drill, resource)
 
     -- Apply productivity bonuses
     local base_productivity = drill.prototype.base_productivity or 0
-    local productivity_bonus = drill.effects and drill.effects.productivity and drill.effects.productivity.bonus or 0
+    local productivity_bonus = drill.productivity_bonus or 0
     local effective_productivity = 1 + base_productivity + productivity_bonus
+
 
     local yield_per_second = 0
 
@@ -158,7 +170,7 @@ function drill_utils.calculate_regular_miner_yield(drill, resource)
             mining_time
     else
         -- Finite resource yield calculation
-        yield_per_second = (actual_mining_speed * amount_per_mining_op * effective_productivity) / mining_time
+        yield_per_second = ((actual_mining_speed * amount_per_mining_op * effective_productivity) / mining_time) or 0
     end
 
     return yield_per_second
@@ -230,8 +242,8 @@ function drill_utils.calculate_core_miner_yield(drill, resource)
 
     -- Calculate yield per second
     local base_mining_rate = actual_mining_speed / mining_time
-    local yield_per_second = base_mining_rate * core_miner_efficiency * zone_yield_multiplier * effective_productivity *
-        amount_per_mining_op
+    local yield_per_second = (base_mining_rate * core_miner_efficiency * zone_yield_multiplier * effective_productivity *
+        amount_per_mining_op) or 0
 
     return yield_per_second
 end
