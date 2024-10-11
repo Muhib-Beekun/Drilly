@@ -7,6 +7,7 @@ local drill_utils = require("drill_utils")
 
 -- Add the Drilly button when the game is initialized (new game or first mod load)
 script.on_init(function()
+    game.print("script.on_init initialized Drilly mod")
     drill_utils.initialize_drills()
     for _, player in pairs(game.players) do
         drilly_button.create_drilly_button_if_needed(player)
@@ -16,6 +17,7 @@ end)
 
 -- Handle changes when a game is loaded or mods are updated
 script.on_configuration_changed(function(event)
+    game.print("script.on_configuration_changed initialized Drilly mod")
     drill_utils.initialize_drills()
     for _, player in pairs(game.players) do
         drilly_button.create_drilly_button_if_needed(player)
@@ -25,17 +27,19 @@ end)
 
 -- Handle changes when a player joins
 script.on_event(defines.events.on_player_joined_game, function(event)
-    local player = game.get_player(event.player_index)
+    game.print("events.on_player_joined_game initialized Drilly mod")
     drill_utils.initialize_drills()
+    local player = game.get_player(event.player_index)
     drilly_button.create_drilly_button_if_needed(player)
     gui.update_surface_dropdown(player)
 end
 )
 
 script.on_event(defines.events.on_player_created, function(event)
+    game.print("events.on_player_created initialized Drilly mod")
+    drill_utils.initialize_drills()
     local player = game.get_player(event.player_index)
     if player then
-        drill_utils.initialize_drills()
         drilly_button.create_drilly_button_if_needed(player)
         gui.update_surface_dropdown(player)
     end
@@ -45,7 +49,6 @@ end)
 commands.add_command("drilly", "Forces the creation of the Drilly button", function(event)
     local player = game.get_player(event.player_index)
     if player then
-        drill_utils.initialize_drills()
         drilly_button.create_drilly_button_if_needed(player)
         gui.update_surface_dropdown(player)
     end
@@ -55,12 +58,14 @@ end)
 
 script.on_event(defines.events.on_tick, function(event)
     if not global.drills then
-        return
+        game.print("events.on_tick not global.drills initialized Drilly mod")
+        drill_utils.initialize_drills()
     end
 
     local total_drills = #global.drill_unit_numbers
     if total_drills == 0 then
         -- Empty drills list, prompt a full refresh
+        game.print("events.on_tick total_drills == 0 initialized Drilly mod")
         drill_utils.initialize_drills()
         total_drills = #global.drill_unit_numbers
         if total_drills == 0 then
@@ -77,10 +82,11 @@ script.on_event(defines.events.on_tick, function(event)
     global.drills_per_tick = drills_per_tick
 
     for i = 1, drills_per_tick do
-        local index = global.drill_processing_index
+        local index = global.drill_processing_index or 1
         if index > total_drills then
             global.drill_processing_index = 1
             index = 1
+            global.initial_update = false
         end
 
         local unit_number = global.drill_unit_numbers[index]
@@ -110,7 +116,8 @@ script.on_event({ defines.events.on_built_entity, defines.events.on_robot_built_
     if entity and entity.valid and entity.type == "mining-drill" then
         drill_utils.add_drill(entity)
     end
-end)
+end
+)
 
 -- Handle when a drill is removed
 script.on_event(
@@ -120,7 +127,12 @@ script.on_event(
         if entity and entity.valid and entity.type == "mining-drill" then
             drill_utils.remove_drill(entity)
         end
-    end)
+        if entity and entity.valid and entity.type == "resource" then
+            local resource_key = (entity.surface.index .. "_" .. entity.position.x .. "_" .. entity.position.y)
+            global.minable_entities[resource_key] = nil
+        end
+    end
+)
 
 
 --Other functions for cleanup and incoperation later
