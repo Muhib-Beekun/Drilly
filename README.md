@@ -95,10 +95,11 @@ You can install **Drilly** either through the Factorio Mod Portal or manually by
 
 4. **Manage Drill Data**:
    - **Manual Refresh**: Click the green refresh button to update the data immediately.
-   - **Auto-Refresh Settings**: Adjust the auto-refresh interval in the mod settings to control how frequently Drilly updates the data automatically.
+   - **Auto-Refresh Interval Setting**: Adjust the auto-refresh interval in the mod settings to control how frequently Drilly updates the data automatically.
+   - **Auto-Refresh Enabled Setting**: Uncheck this box to disable automatic updates and rely solely on manual refreshes.
 
 5. **Monitor Processing Progress**:
-   - **Progress Bars**: Observe real-time progress indicators showing the current processing status of your drills.
+   - **Progress Bars**: Observe real-time progress indicators showing the current processing status of your drills. When you select refresh and on initialization.
 
 6. **Close the GUI**:
    - Click the red close button to hide the Drilly interface when not needed.
