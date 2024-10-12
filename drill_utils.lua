@@ -124,7 +124,7 @@ function drill_utils.update_drill_data(drill_data)
     for _, resource in pairs(resource_entities) do
         if mining_categories[resource.prototype.resource_category] then
             local resource_name = resource.name
-            if settings["drilly-group-deep-resources"].value then
+            if settings.global["drilly-group-deep-resources"].value then
                 resource_name = resource_name:gsub("^deep%-", "")
             end
             valid_resources[resource_name] = valid_resources[resource_name] or {}
