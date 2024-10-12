@@ -11,6 +11,13 @@ data:extend({
         order = "a"
     },
     {
+        type = "bool-setting",
+        name = "drilly-refresh-enabled",
+        setting_type = "runtime-global",
+        default_value = true,
+        order = "b"
+    },
+    {
         type = "int-setting",
         name = "drilly-current-period-index",
         setting_type = "runtime-per-user",

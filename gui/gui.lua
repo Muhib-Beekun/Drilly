@@ -329,7 +329,7 @@ function gui.update_progress_bar(player, current_index, total_drills)
     local progress_bar = progress_flow.drill_progress_bar
     local progress_label = progress_flow.drill_progress_label
 
-    if not progress_bar and global.initial_update then
+    if not progress_bar and global.force_update then
         progress_bar = progress_flow.add {
             type = "progressbar",
             name = "drill_progress_bar",
@@ -339,7 +339,7 @@ function gui.update_progress_bar(player, current_index, total_drills)
         progress_bar.style.width = 200
     end
 
-    if not progress_label and global.initial_update then
+    if not progress_label and global.force_update then
         progress_label = progress_flow.add {
             type = "label",
             name = "drill_progress_label",
@@ -348,15 +348,15 @@ function gui.update_progress_bar(player, current_index, total_drills)
         progress_label.style.left_margin = 10
     end
 
-    if progress_label and not global.initial_update then
+    if progress_label and not global.force_update then
         progress_label.destroy()
     end
 
-    if progress_bar and not global.initial_update then
+    if progress_bar and not global.force_update then
         progress_bar.destroy()
     end
 
-    if not global.initial_update then
+    if not global.force_update then
         return
     end
 

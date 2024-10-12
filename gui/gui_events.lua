@@ -1,6 +1,6 @@
 --gui_events.lua
 
-local gui = require("gui")
+local gui = require("gui.gui")
 
 -- Function to handle GUI clicks (for both refresh and close buttons)
 script.on_event(defines.events.on_gui_click, function(event)
@@ -10,7 +10,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         if event.element and event.element.valid then
             -- Handle refresh button click
             if event.element.name == "refresh_button" then
-                global.initial_update = true
+                global.force_update = true
                 global.drill_processing_index = 1
 
                 -- Handle close button click

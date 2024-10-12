@@ -8,7 +8,7 @@ function drill_utils.initialize_drills()
     global.drills = global.drills or {}
     global.drill_unit_numbers = global.drill_unit_numbers or {}
     global.drill_processing_index = global.drill_processing_index or 1
-    global.initial_update = global.initial_update or true
+    global.force_update = global.force_update or true
     global.surface_data = global.surface_data or {}                                   -- For caching per-surface data
     global.minable_entities = global.minable_entities or
         {}                                                                            -- Initialize global minable entities table
@@ -91,7 +91,7 @@ function drill_utils.update_drill_data(drill_data)
     -- Determine if an update is necessary
     local needs_update = false
 
-    if global.initial_update then
+    if global.force_update then
         needs_update = true
     elseif current_status == defines.entity_status.working then
         needs_update = true
