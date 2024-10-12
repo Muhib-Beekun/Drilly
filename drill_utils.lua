@@ -11,7 +11,7 @@ function drill_utils.initialize_drills()
     global.initial_update = global.initial_update or true
     global.surface_data = global.surface_data or {}                                   -- For caching per-surface data
     global.minable_entities = global.minable_entities or
-    {}                                                                                -- Initialize global minable entities table
+        {}                                                                            -- Initialize global minable entities table
     for _, surface in pairs(game.surfaces) do
         global.surface_data[surface.index] = global.surface_data[surface.index] or {} -- Initialize per-surface data
 
@@ -49,8 +49,10 @@ function drill_utils.add_drill(drill)
     global.drills[drill.unit_number] = drill_data
     table.insert(global.drill_unit_numbers, drill.unit_number)
 
+    local resource_entities = drill_utils.get_resource_entities(drill)
+
     -- Update minable_entities
-    drill_utils.update_minable_entities_for_drill(drill, true)
+    drill_utils.update_minable_entities_for_drill(drill, true, resource_entities)
 end
 
 -- Function to remove a drill from global.drills
@@ -63,15 +65,16 @@ function drill_utils.remove_drill(drill)
             break
         end
     end
+    local resource_entities = drill_utils.get_resource_entities(drill)
 
     -- Update global.minable_entities to remove the drill from any resource entities it covers
-    drill_utils.update_minable_entities_for_drill(drill, false)
+    drill_utils.update_minable_entities_for_drill(drill, false, resource_entities)
 end
 
 -- Function to update a single drill's data
 function drill_utils.update_drill_data(drill_data)
     if not global.minable_entities then
-        game.print("drill_utils.update_drill_data not global.minable_entities initalized drilly mod")
+        game.print("[Drilly Mod] Warning: global.minable_entities not initialized at UpdateDrillData. Initializing now.")
         drill_utils.initialize_drills()
     end
 
@@ -82,7 +85,24 @@ function drill_utils.update_drill_data(drill_data)
         return
     end
 
+    -- Retrieve the current status of the drill
+    local current_status = drill.status
 
+    -- Determine if an update is necessary
+    local needs_update = false
+
+    if global.initial_update then
+        needs_update = true
+    elseif current_status == defines.entity_status.working then
+        needs_update = true
+    elseif drill_data.status ~= current_status then
+        needs_update = true
+    end
+
+    -- If no update is needed, exit the function
+    if not needs_update then
+        return
+    end
 
 
     -- Update status
@@ -94,14 +114,7 @@ function drill_utils.update_drill_data(drill_data)
     drill_data.productivity_bonus = 1 + base_productivity + productivity_bonus
 
     -- Get the list of resource entities covered by this drill
-    local mining_radius = drill.prototype.mining_drill_radius or 0
-    local mining_area = {
-        left_top = { x = drill.position.x - mining_radius, y = drill.position.y - mining_radius },
-        right_bottom = { x = drill.position.x + mining_radius, y = drill.position.y + mining_radius }
-    }
-
-    local surface = drill.surface
-    local resource_entities = surface.find_entities_filtered { area = mining_area, type = "resource" }
+    local resource_entities = drill_utils.get_resource_entities(drill)
 
     -- Filter resources that the drill can mine
     local mining_categories = drill.prototype.resource_categories
@@ -155,7 +168,7 @@ function drill_utils.update_drill_data(drill_data)
         for _, res in pairs(resources) do
             local resource_key = (res.surface.index .. "_" .. res.position.x .. "_" .. res.position.y)
             if not global.minable_entities[resource_key] then
-                drill_utils.update_minable_entities_for_drill(drill, true)
+                drill_utils.update_minable_entities_for_drill(drill, true, resource_entities)
             end
             local drills_covering = global.minable_entities[resource_key] and
                 global.minable_entities[resource_key].drills or {}
@@ -165,9 +178,6 @@ function drill_utils.update_drill_data(drill_data)
             end
             -- Adjust the resource amount by dividing by the number of drills covering it
             local adjusted_amount = (res.amount or 0) / num_drills_covering
-            --game.print("res.amount = " .. tostring(res.amount))
-            --game.print("num_drills_covering = " .. tostring(num_drills_covering))
-            --game.print("Adjusted amount for " .. res.name .. " is " .. tostring(adjusted_amount))
             total_amount = total_amount + adjusted_amount
         end
 
@@ -304,16 +314,7 @@ function drill_utils.calculate_core_miner_yield(drill, resource)
     return yield_per_second
 end
 
-function drill_utils.update_minable_entities_for_drill(drill, is_adding)
-    local mining_radius = drill.prototype.mining_drill_radius or 0
-    local mining_area = {
-        left_top = { x = drill.position.x - mining_radius, y = drill.position.y - mining_radius },
-        right_bottom = { x = drill.position.x + mining_radius, y = drill.position.y + mining_radius }
-    }
-
-    local surface = drill.surface
-    local resource_entities = surface.find_entities_filtered { area = mining_area, type = "resource" }
-
+function drill_utils.update_minable_entities_for_drill(drill, is_adding, resource_entities)
     -- Filter resources that the drill can mine
     local mining_categories = drill.prototype.resource_categories
     for _, resource in pairs(resource_entities) do
@@ -339,6 +340,46 @@ function drill_utils.update_minable_entities_for_drill(drill, is_adding)
             end
         end
     end
+end
+
+--- Retrieves resource entities within the mining area of a given drill.
+-- @param drill LuaEntity - The mining drill entity to inspect.
+-- @return table - A list of resource entities found within the drill's mining area.
+function drill_utils.get_resource_entities(drill)
+    -- Validate the drill entity
+    if not drill or not drill.valid then
+        log("Error: Invalid drill entity provided to get_resource_entities.")
+        return {}
+    end
+
+    -- Determine the mining radius of the drill
+    local mining_radius = drill.prototype.mining_drill_radius or 0
+
+    -- Define the mining area based on the drill's position and mining radius
+    local mining_area = {
+        left_top = {
+            x = drill.position.x - mining_radius,
+            y = drill.position.y - mining_radius
+        },
+        right_bottom = {
+            x = drill.position.x + mining_radius,
+            y = drill.position.y + mining_radius
+        }
+    }
+
+    -- Get the surface (game world layer) where the drill is located
+    local surface = drill.surface
+
+    -- Find all resource entities within the mining area
+    local resource_entities = surface.find_entities_filtered {
+        area = mining_area,
+        type = "resource"
+    }
+
+    -- Optional: Log the number of resources found for debugging
+    log(string.format("Drill #%d found %d resource(s) within its mining area.", drill.unit_number, #resource_entities))
+
+    return resource_entities
 end
 
 return drill_utils
