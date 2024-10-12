@@ -24,22 +24,59 @@
 
 ## 🛠 Installation
 
-1a. **Download the Mod**:
-   - Obtain the latest version of Drilly from the [Factorio Mod Portal](https://mods.factorio.com/mod/Drilly) or your preferred source.
+You can install **Drilly** either through the Factorio Mod Portal or manually by downloading the mod files. Follow the steps below based on your preferred installation method.
 
-1b. **Install the Mod**:
-   - Extract the `drilly` folder into your Factorio mods directory:
+### 1. Install via Factorio Mod Portal
+
+1. **Launch Factorio**:
+   - Open the Factorio game on your computer.
+
+2. **Open the Mods Menu**:
+   - From the main menu, click on the **Mods** button to access the mod management interface.
+
+3. **Search for Drilly**:
+   - Use the search bar within the Mods menu to locate the "**Drilly**" mod.
+
+4. **Install the Mod**:
+   - Click on **Drilly** in the search results.
+   - Click the **Install** button to add the mod to your game.
+
+5. **Enable the Mod**:
+   - After installation, ensure that **Drilly** is enabled in your mod list.
+   - You can toggle the mod's activation status by checking or unchecking the box next to it.
+
+6. **Start the Game**:
+   - Return to the main menu and click **Play** to enter your game world.
+   - Drilly's features will now be available for monitoring your resource miners.
+
+### 2. Manual Installation
+
+1. **Download the Mod**:
+   - Visit the [Factorio Mod Portal](https://mods.factorio.com/mod/Drilly) or your preferred source to download the latest version of **Drilly**.
+   - Ensure you download the correct version compatible with your Factorio installation.
+
+2. **Extract the Mod Files**:
+   - Locate the downloaded `drilly.zip` (or similar) file.
+   - Extract the contents to obtain the `drilly` folder.
+
+3. **Move the Mod to Factorio's Mods Directory**:
+   - Place the `drilly` folder into your Factorio mods directory:
      - **Windows**: `C:\Users\<YourUsername>\AppData\Roaming\Factorio\mods`
      - **Linux**: `~/.factorio/mods/`
      - **macOS**: `~/Library/Application Support/factorio/mods/`
 
-2. **Enable the Mod**:
+   - *Note*: If the `mods` folder does not exist, you can create it manually.
+
+4. **Enable the Mod**:
    - Launch Factorio.
    - Navigate to the **Mods** section in the main menu.
-   - Ensure that **Drilly** is enabled.
+   - Locate **Drilly** in the list and ensure it is enabled by checking the corresponding box.
 
-3. **Start the Game**:
-   - Enter your game world and begin utilizing Drilly's features to monitor your resource miners.
+5. **Start the Game**:
+   - Click **Play** to enter your game world.
+   - Drilly's graphical interface for monitoring resource miners will now be active.
+
+---
 
 ## 🎮 Usage
 
