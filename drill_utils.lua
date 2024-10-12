@@ -7,8 +7,8 @@ function drill_utils.initialize_drills()
     game.print("initialize_drills")
     global.drills = global.drills or {}
     global.drill_unit_numbers = global.drill_unit_numbers or {}
-    global.drill_processing_index = global.drill_processing_index or 1
-    global.force_update = global.force_update or true
+    global.drill_processing_index = 1                                                 -- Force restart of drill processing loop
+    global.force_update = true                                                        -- Force restart of drill processing loop
     global.surface_data = global.surface_data or {}                                   -- For caching per-surface data
     global.minable_entities = global.minable_entities or
         {}                                                                            -- Initialize global minable entities table
@@ -124,6 +124,9 @@ function drill_utils.update_drill_data(drill_data)
     for _, resource in pairs(resource_entities) do
         if mining_categories[resource.prototype.resource_category] then
             local resource_name = resource.name
+            if settings["drilly-group-deep-resources"].value then
+                resource_name = resource_name:gsub("^deep%-", "")
+            end
             valid_resources[resource_name] = valid_resources[resource_name] or {}
             table.insert(valid_resources[resource_name], resource)
         end
@@ -142,14 +145,12 @@ function drill_utils.update_drill_data(drill_data)
     local total_resources = {}
     for resource_name, resources in pairs(valid_resources) do
         -- Choose one resource entity to use in calculations
-        local resource = resources[1]
-
         -- Calculate yield per second for this resource
         local yield_per_second = 0
         if script.active_mods["space-exploration"] and drill.name == "se-core-miner-drill" then
-            yield_per_second = drill_utils.calculate_core_miner_yield(drill, resource)
+            yield_per_second = drill_utils.calculate_core_miner_yield(drill, resources[1])
         else
-            yield_per_second = drill_utils.calculate_regular_miner_yield(drill, resource)
+            yield_per_second = drill_utils.calculate_regular_miner_yield(drill, resources[1])
         end
 
         -- Adjust the yield per second based on the fraction of resource tiles
@@ -167,8 +168,8 @@ function drill_utils.update_drill_data(drill_data)
 
         -- Sum total amounts of this resource, adjusting for overlapping drills
         local total_amount = 0
-        for _, res in pairs(resources) do
-            local resource_key = (res.surface.index .. "_" .. res.position.x .. "_" .. res.position.y)
+        for _, resource in pairs(resources) do
+            local resource_key = (resource.surface.index .. "_" .. resource.position.x .. "_" .. resource.position.y)
             if not global.minable_entities[resource_key] then
                 drill_utils.update_minable_entities_for_drill(drill, true, resource_entities)
             end
@@ -179,7 +180,7 @@ function drill_utils.update_drill_data(drill_data)
                 num_drills_covering = num_drills_covering + 1
             end
             -- Adjust the resource amount by dividing by the number of drills covering it
-            local adjusted_amount = (res.amount or 0) / num_drills_covering
+            local adjusted_amount = (resource.amount or 0) / num_drills_covering
             total_amount = total_amount + adjusted_amount
         end
 
@@ -350,7 +351,7 @@ end
 function drill_utils.get_resource_entities(drill)
     -- Validate the drill entity
     if not drill or not drill.valid then
-        log("Error: Invalid drill entity provided to get_resource_entities.")
+        game.print("[Drilly Mod]: Warning: Invalid drill entity provided to get_resource_entities.")
         return {}
     end
 
@@ -379,7 +380,6 @@ function drill_utils.get_resource_entities(drill)
     }
 
     -- Optional: Log the number of resources found for debugging
-    log(string.format("Drill #%d found %d resource(s) within its mining area.", drill.unit_number, #resource_entities))
 
     return resource_entities
 end

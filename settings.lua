@@ -18,6 +18,13 @@ data:extend({
         order = "b"
     },
     {
+        type = "bool-setting",
+        name = "drilly-group-deep-resources",
+        setting_type = "runtime-global",
+        default_value = false,
+        order = "c",
+    },
+    {
         type = "int-setting",
         name = "drilly-current-period-index",
         setting_type = "runtime-per-user",
