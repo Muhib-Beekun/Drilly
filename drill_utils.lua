@@ -95,6 +95,8 @@ function drill_utils.update_drill_data(drill_data)
         needs_update = true
     elseif current_status == defines.entity_status.working then
         needs_update = true
+    elseif drill_data.yield_per_second == 0 then
+        needs_update = true
     elseif drill_data.status ~= current_status then
         needs_update = true
     end

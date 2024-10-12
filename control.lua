@@ -58,14 +58,13 @@ end)
 
 script.on_event(defines.events.on_tick, function(event)
     if not global.drills then
-        game.print("events.on_tick not global.drills initialized Drilly mod")
+        game.print("[Drilly Mod] Warning: global.minable_entities not initialized at tick time. Initializing now.")
         drill_utils.initialize_drills()
     end
 
     local total_drills = #global.drill_unit_numbers
     if total_drills == 0 then
         -- Empty drills list, prompt a full refresh
-        game.print("events.on_tick total_drills == 0 initialized Drilly mod")
         drill_utils.initialize_drills()
         total_drills = #global.drill_unit_numbers
         if total_drills == 0 then
@@ -111,8 +110,9 @@ script.on_event(defines.events.on_tick, function(event)
 end)
 
 -- Handle when a drill is built
+--- @param event defines.events.on_built_entity|defines.events.on_robot_built_entity
 script.on_event({ defines.events.on_built_entity, defines.events.on_robot_built_entity }, function(event)
-    local entity = event.created_entity or event.entity
+    local entity = event.created_entity
     if entity and entity.valid and entity.type == "mining-drill" then
         drill_utils.add_drill(entity)
     end
