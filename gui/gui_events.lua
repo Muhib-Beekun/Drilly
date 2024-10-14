@@ -88,7 +88,20 @@ script.on_event(defines.events.on_gui_click, function(event)
 
                 -- Make sure `drill.entity` is a valid entity
                 if drill and drill.entity and drill.entity.valid then
-                    local entity = drill.entity -- Access the actual entity object
+                    local entity = drill.entity
+                    local player_surface = player.surface.name
+
+                    if script.active_mods["space-exploration"] and not (player_surface == surface) then
+                        remote.call("space-exploration", "remote_view_start",
+                            {
+                                player = player,
+                                zone_name = surface,
+                                position = drill.entity.position,
+                                location_name =
+                                "Point of Interest",
+                                freeze_history = true
+                            })
+                    end
 
 
                     player.zoom_to_world(entity.position, 0.5)
