@@ -12,6 +12,8 @@
 
 - **Drill Type Breakdown**: Detailed counts of each drill type dedicated to mining specific resources, helping you balance and optimize your mining infrastructure.
 
+- **Drill Alerts**: Hover over a drill to trigger an alert on the map, click a drill to zoom to its location.
+
 - **Dynamic & Auto-Refresh**:
   - **Manual Refresh**: Use the "Refresh" button to update the displayed data on-demand.
   - **Configurable Auto-Refresh**: Set automatic update intervals in the mod settings to keep your data current without manual intervention.
@@ -19,6 +21,8 @@
 - **Optimized Performance**: Drilly processes drills efficiently by updating only active drills or those that have recently changed status, ensuring minimal impact on game performance.
 
 - **Progress Indicators**: Visual progress bars and indicators provide real-time feedback on the processing status of your drills.
+
+- **Mod Support**: Works seamlessly with popular mods like Krastorio 2, Angels mods and Bob's mods by detecting the additional resources and drill types they introduce. Built in support for space exploration will always be prioritized (Its why I built this). Supports Dredgeworks Ore Grouping.
 
 - **User-Friendly GUI**: Intuitive and responsive graphical interface designed for ease of use, with clear categorization and actionable insights.
 
@@ -98,10 +102,14 @@ You can install **Drilly** either through the Factorio Mod Portal or manually by
    - **Auto-Refresh Interval Setting**: Adjust the auto-refresh interval in the mod settings to control how frequently Drilly updates the data automatically.
    - **Auto-Refresh Enabled Setting**: Uncheck this box to disable automatic updates and rely solely on manual refreshes.
 
-5. **Monitor Processing Progress**:
+5. **Monitor Drills**:
+   - **Hover over Drill Icons**: Hover the mouse cursor over individual drills in the drill type breakdown rows to generate an map alert at those locations.
+   - **Click on drill Icons**: Clicking a drill icon will zoom the map to that specific drill's location and highlight it.
+
+6. **Monitor Processing Progress**:
    - **Progress Bars**: Observe real-time progress indicators showing the current processing status of your drills. When you select refresh and on initialization.
 
-6. **Close the GUI**:
+7. **Close the GUI**:
    - Click the red close button to hide the Drilly interface when not needed.
 
 ## ⚙️ Configuration
