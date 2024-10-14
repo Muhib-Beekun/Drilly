@@ -84,7 +84,29 @@ script.on_event(defines.events.on_gui_click, function(event)
 
                 -- Fetch drills matching the criteria
                 local drills = drill_utils.search_drills(resource, status, surface, drill_type)
-                local drill = drills[1]
+
+                global.player_data[player.index] = global.player_data[player.index] or {}
+
+                global.player_data[player.index].drilly_drill_index = global.player_data[player.index]
+                    .drilly_drill_index or {}
+
+                -- Generate a unique key to store the index for this specific drill type
+                local key = resource .. "_" .. status .. "_" .. surface .. "_" .. drill_type
+
+                -- If this key doesn't exist, initialize it to 1
+                global.player_data[player.index].drilly_drill_index[key] = global.player_data[player.index]
+                    .drilly_drill_index[key] or 1
+
+                -- Get the current drill index
+                local current_drill_index = global.player_data[player.index].drilly_drill_index[key]
+
+                -- Safety check to ensure the current drill index is within the valid range
+                if current_drill_index < 1 or current_drill_index > #drills then
+                    current_drill_index = 1 -- Reset to 1 if the index is out of range
+                end
+
+                -- Select the drill based on the current index
+                local drill = drills[current_drill_index]
 
                 -- Make sure `drill.entity` is a valid entity
                 if drill and drill.entity and drill.entity.valid then
@@ -114,6 +136,14 @@ script.on_event(defines.events.on_gui_click, function(event)
                     }
                 else
                     player.print("[Drilly Mod] Warning: Drill entity is invalid or not found.")
+                end
+
+                -- Update the index, wrapping back to 1 if we reach the end of the drill list
+                if #drills > 0 then
+                    global.player_data[player.index].drilly_drill_index[key] = current_drill_index + 1
+                    if global.player_data[player.index].drilly_drill_index[key] > #drills then
+                        global.player_data[player.index].drilly_drill_index[key] = 1 -- Reset to the first drill when reaching the end
+                    end
                 end
             end
         end

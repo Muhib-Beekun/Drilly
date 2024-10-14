@@ -12,6 +12,7 @@ function drill_utils.initialize_drills()
     global.minable_entities = global.minable_entities or
         {}                                                                            -- Initialize global minable entities table
     global.temporary_alerts = global.temporary_alerts or {}                           -- Initialize temporary alerts
+    global.player_data = global.player_data or {}                                     -- initialize Player Data
     for _, surface in pairs(game.surfaces) do
         global.surface_data[surface.index] = global.surface_data[surface.index] or {} -- Initialize per-surface data
 
