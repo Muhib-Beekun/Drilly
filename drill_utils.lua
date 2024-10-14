@@ -4,7 +4,6 @@ local drill_utils = {}
 
 -- Initialize the global tables
 function drill_utils.initialize_drills()
-    game.print("initialize_drills")
     global.drills = global.drills or {}
     global.drill_unit_numbers = global.drill_unit_numbers or {}
     global.drill_processing_index = 1                                                 -- Force restart of drill processing loop
@@ -352,7 +351,7 @@ end
 function drill_utils.get_resource_entities(drill)
     -- Validate the drill entity
     if not drill or not drill.valid then
-        game.print("[Drilly Mod]: Warning: Invalid drill entity provided to get_resource_entities.")
+        game.print("[Drilly Mod] Warning: Invalid drill entity provided to get_resource_entities.")
         return {}
     end
 

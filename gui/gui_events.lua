@@ -9,21 +9,16 @@ script.on_event(defines.events.on_gui_hover, function(event)
     local element = event.element
     if not element then return end
 
-    -- Debugging: Print hovered element name
-    -- player.print("Hovered over: " .. tostring(element.name))
-
     -- Pattern matching with updated separator (hyphen)
     local resource, status, surface, drill_type = string.match(event.element.name,
         "drilly_([^_]+)_([^_]+)_([^_]+)_([^_]+)")
     if resource and status and surface and drill_type then
-        -- player.print(string.format("Resource: %s, Status: %s, Surface: %s", resource, status, surface))
-        -- Create temporary alerts based on resource, status, surface
         local drills = drill_utils.search_drills(resource, status, surface, drill_type)
         for _, drill in ipairs(drills) do
             drill_utils.create_temporary_alert(event.player_index, drill)
         end
     else
-        player.print("Error: Unable to parse button name correctly.")
+        player.print("[Drilly Mod] Error: Unable to parse button name correctly.")
     end
 end)
 
@@ -32,8 +27,6 @@ script.on_event(defines.events.on_gui_leave, function(event)
     local player = game.get_player(event.player_index)
     local element = event.element
     if not element then return end
-
-    --player.print("Left hover over: " .. tostring(element.name))
 
     -- Pattern matching with updated separator (hyphen)
     local resource, status, surface, drill_type = string.match(event.element.name,
@@ -47,7 +40,7 @@ script.on_event(defines.events.on_gui_leave, function(event)
             end
         end
     else
-        player.print("Error: Unable to parse button name correctly.")
+        player.print("[Drilly Mod] Error: Unable to parse button name correctly.")
     end
 end)
 
@@ -97,9 +90,6 @@ script.on_event(defines.events.on_gui_click, function(event)
                 if drill and drill.entity and drill.entity.valid then
                     local entity = drill.entity -- Access the actual entity object
 
-                    player.print("Pinging location of area-mining-drill with entity number: " .. entity
-                        .unit_number)
-                    player.print("Position: x = " .. entity.position.x .. ", y = " .. entity.position.y)
 
                     player.zoom_to_world(entity.position, 0.5)
 
@@ -110,7 +100,7 @@ script.on_event(defines.events.on_gui_click, function(event)
                         color = { r = 1, g = 0.5, b = 0 }
                     }
                 else
-                    player.print("Drill entity is invalid or not found.")
+                    player.print("[Drilly Mod] Warning: Drill entity is invalid or not found.")
                 end
             end
         end

@@ -169,7 +169,6 @@ end
 function gui.update_drill_count(player)
     local main_frame = player.gui.screen.drill_inspector_frame
     if not main_frame then
-        player.print("Error: Drilly frame not found.")
         return
     end
 
@@ -380,7 +379,7 @@ function gui.update_surface_dropdown(player)
     local header_flow = main_frame.header_flow
     local surface_dropdown = header_flow.surface_dropdown
     if not surface_dropdown then
-        player.print("Error: Drilly surface dropdown not found.")
+        player.print("[Drilly Mod] Error: Drilly surface dropdown not found.")
         return
     end
 
