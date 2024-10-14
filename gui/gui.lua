@@ -301,8 +301,12 @@ function gui.update_drill_count(player)
                     local formatted_value = format_number_with_commas(display_value)
                     local tooltip_suffix = display_interval == "total" and "" or " per " .. display_interval
 
+                    local button_name = string.format("drilly_%s_%s_%s_%s", resource_name, status, key, drill_type)
+
                     resource_line.add {
                         type = "sprite-button",
+                        raise_hover_events = true,
+                        name = button_name,
                         sprite = "entity/" .. drill_type,
                         number = display_value,
                         tooltip = drill_type .. " (" .. status_name .. "): " .. formatted_value .. tooltip_suffix,

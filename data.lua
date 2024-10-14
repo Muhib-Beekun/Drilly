@@ -1,5 +1,6 @@
 -- data.lua
 require("styles")
+-- require("prototypes.signals")
 
 data:extend({
     {

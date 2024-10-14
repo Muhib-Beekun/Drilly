@@ -1,6 +1,55 @@
 --gui_events.lua
 
 local gui = require("gui.gui")
+local drill_utils = require("drill_utils")
+
+-- Event handler for GUI hover
+script.on_event(defines.events.on_gui_hover, function(event)
+    local player = game.get_player(event.player_index)
+    local element = event.element
+    if not element then return end
+
+    -- Debugging: Print hovered element name
+    -- player.print("Hovered over: " .. tostring(element.name))
+
+    -- Pattern matching with updated separator (hyphen)
+    local resource, status, surface, drill_type = string.match(event.element.name,
+        "drilly_([^_]+)_([^_]+)_([^_]+)_([^_]+)")
+    if resource and status and surface and drill_type then
+        -- player.print(string.format("Resource: %s, Status: %s, Surface: %s", resource, status, surface))
+        -- Create temporary alerts based on resource, status, surface
+        local drills = drill_utils.search_drills(resource, status, surface, drill_type)
+        for _, drill in ipairs(drills) do
+            drill_utils.create_temporary_alert(event.player_index, drill)
+        end
+    else
+        player.print("Error: Unable to parse button name correctly.")
+    end
+end)
+
+-- Event handler for GUI leave
+script.on_event(defines.events.on_gui_leave, function(event)
+    local player = game.get_player(event.player_index)
+    local element = event.element
+    if not element then return end
+
+    --player.print("Left hover over: " .. tostring(element.name))
+
+    -- Pattern matching with updated separator (hyphen)
+    local resource, status, surface, drill_type = string.match(event.element.name,
+        "drilly_([^_]+)_([^_]+)_([^_]+)_([^_]+)")
+    if resource and status and surface and drill_type then
+        -- Remove temporary alerts based on resource, status, surface
+        local player_alerts = global.temporary_alerts and global.temporary_alerts[event.player_index]
+        if player_alerts then
+            for _, drill in pairs(player_alerts) do
+                drill_utils.remove_temporary_alert(event.player_index, drill)
+            end
+        end
+    else
+        player.print("Error: Unable to parse button name correctly.")
+    end
+end)
 
 -- Function to handle GUI clicks (for both refresh and close buttons)
 script.on_event(defines.events.on_gui_click, function(event)
@@ -35,6 +84,34 @@ script.on_event(defines.events.on_gui_click, function(event)
                 event.element.caption = time_periods[current_index]
                 -- Update the GUI
                 gui.update_drill_count(player)
+            elseif string.find(event.element.name, "^drilly_") then
+                local resource, status, surface, drill_type = string.match(event.element.name,
+                    "drilly_([^_]+)_([^_]+)_([^_]+)_([^_]+)")
+                if not (resource and status and surface and drill_type) then return end
+
+                -- Fetch drills matching the criteria
+                local drills = drill_utils.search_drills(resource, status, surface, drill_type)
+                local drill = drills[1]
+
+                -- Make sure `drill.entity` is a valid entity
+                if drill and drill.entity and drill.entity.valid then
+                    local entity = drill.entity -- Access the actual entity object
+
+                    player.print("Pinging location of area-mining-drill with entity number: " .. entity
+                        .unit_number)
+                    player.print("Position: x = " .. entity.position.x .. ", y = " .. entity.position.y)
+
+                    player.zoom_to_world(entity.position, 0.5)
+
+                    entity.surface.create_entity {
+                        name = "flying-text",
+                        position = drill.entity.position,
+                        text = "Drill Here",
+                        color = { r = 1, g = 0.5, b = 0 }
+                    }
+                else
+                    player.print("Drill entity is invalid or not found.")
+                end
             end
         end
     end

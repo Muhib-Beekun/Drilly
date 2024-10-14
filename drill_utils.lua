@@ -12,6 +12,7 @@ function drill_utils.initialize_drills()
     global.surface_data = global.surface_data or {}                                   -- For caching per-surface data
     global.minable_entities = global.minable_entities or
         {}                                                                            -- Initialize global minable entities table
+    global.temporary_alerts = global.temporary_alerts or {}                           -- Initialize temporary alerts
     for _, surface in pairs(game.surfaces) do
         global.surface_data[surface.index] = global.surface_data[surface.index] or {} -- Initialize per-surface data
 
@@ -382,6 +383,74 @@ function drill_utils.get_resource_entities(drill)
     -- Optional: Log the number of resources found for debugging
 
     return resource_entities
+end
+
+-- Function to search drills based on resource, status, and surface
+function drill_utils.search_drills(resource, status, surface, drill_type)
+    local filtered_drills = {}
+
+    for _, drill in pairs(global.drills) do
+        local drill_entity = drill.entity
+        if drill_entity and drill_entity.valid then
+            local drill_status = drill.status
+
+            local drill_surface = game.surfaces[drill_entity.surface.name]
+            -- Check if the drill's status matches
+            if tostring(drill_status) == tostring(status) then
+                -- Check drill type
+                if drill_type == nil or drill_type == drill_entity.name then
+                    -- Check if the drill extracts the specified resource
+                    if drill.total_resources and drill.total_resources[resource] then
+                        -- Check surface criteria
+                        if surface == "Aggregate" then
+                            table.insert(filtered_drills, drill)
+                        elseif surface == drill_surface.name then
+                            table.insert(filtered_drills, drill)
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return filtered_drills
+end
+
+-- Function to create a temporary alert using Factorio's alert system
+function drill_utils.create_temporary_alert(player_index, drill)
+    local player = game.get_player(player_index)
+    if not drill or not drill.entity.valid then return end
+
+    -- Add a predefined alert type (turret_fire as a placeholder)
+    player.add_alert(drill.entity, defines.alert_type.turret_fire)
+
+    -- Initialize the global.temporary_alerts table if not present
+    global.temporary_alerts = global.temporary_alerts or {}
+    global.temporary_alerts[player_index] = global.temporary_alerts[player_index] or {}
+
+    -- Use drill.unit_number as a unique key to prevent duplicates
+    local unit_number = drill.entity.unit_number
+    if not global.temporary_alerts[player_index][unit_number] then
+        global.temporary_alerts[player_index][unit_number] = drill
+    end
+end
+
+-- Function to remove a temporary alert
+function drill_utils.remove_temporary_alert(player_index, drill)
+    local player = game.get_player(player_index)
+    if not drill or not drill.entity.valid then return end
+
+    -- Initialize the global.temporary_alerts table if not present
+    global.temporary_alerts = global.temporary_alerts or {}
+    global.temporary_alerts[player_index] = global.temporary_alerts[player_index] or {}
+
+    local unit_number = drill.entity.unit_number
+    if global.temporary_alerts[player_index][unit_number] then
+        -- Remove the alert from the player
+        player.remove_alert({ entity = drill.entity })
+
+        -- Remove the drill from the tracking table
+        global.temporary_alerts[player_index][unit_number] = nil
+    end
 end
 
 return drill_utils

@@ -1,0 +1,10 @@
+---------------------------------------------------------------------------------------------------
+Version: 1.0.1
+Date: 2024-10-13
+  Features:
+    - Added Support for Dredgeworks Ore Grouping and Localization for the new setting
+---------------------------------------------------------------------------------------------------
+Version: 1.0.0
+Date: 2024-10-12
+  Features:
+    - Inital Release
