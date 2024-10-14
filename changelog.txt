@@ -1,8 +1,15 @@
 ---------------------------------------------------------------------------------------------------
-Version: 1.0.1
-Date: 2024-10-13
+Version: 1.1.0
+Date: 2024-10-14
   Features:
     - Added Support for Dredgeworks Ore Grouping and Localization for the new setting
+    - Added on hover map warnings for drills
+    - Added on click map zoom to drills
+    - Added iterative clicking for map zoom to drill
+    - Added Support for Space Exploration Navigation to specific locations on other surfaces
+  Changes:
+    - Updated dependencies to 1.1.79 to include on hover support
+    - Removed Debugging from scripts
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.0
 Date: 2024-10-12
