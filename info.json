@@ -4,7 +4,7 @@
     "title": "Drilly",
     "author": "Muhib Beekun",
     "description": "Enhance your mining operations with Drilly! This mod meticulously monitors all mining drills, providing real-time insights into their performance and efficiency. Easily track resource yields, drill statuses, and productivity bonuses directly through an intuitive in-game interface. Whether you're managing a small base or overseeing a sprawling mining network, Drilly equips you with the essential data to optimize your resource extraction strategies.",
-    "factorio_version": "1.1.79",
+    "factorio_version": "1.1",
     "dependencies": [
         "base >= 1.1.79"
     ],
