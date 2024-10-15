@@ -415,19 +415,40 @@ function drill_utils.search_drills(resource, status, surface, drill_type)
     return filtered_drills
 end
 
--- Function to create a temporary alert using Factorio's alert system
-function drill_utils.create_temporary_alert(player_index, drill)
+local icons = {
+    ["green"] = { type = "fluid", name = "drilly-green-alert" },
+    ["yellow"] = { type = "fluid", name = "drilly-yellow-alert" },
+    ["red"] = { type = "fluid", name = "drilly-red-alert" },
+}
+
+-- Helper to get alert icon based on status
+local function get_alert_icon(status)
+    if tostring(status) == tostring(defines.entity_status.working) then
+        return icons["green"]
+    elseif (tostring(status) == tostring(defines.entity_status.waiting_for_space_in_destination)) or
+        (tostring(status) == tostring(defines.entity_status.low_input_fluid)) then
+        return icons["yellow"]
+    else
+        return icons["red"]
+    end
+end
+
+
+-- Function to create a temporary alert
+function drill_utils.create_temporary_alert(player_index, drill, status)
     local player = game.get_player(player_index)
     if not drill or not drill.entity.valid then return end
 
-    -- Add a predefined alert type (turret_fire as a placeholder)
-    player.add_alert(drill.entity, defines.alert_type.turret_fire)
+    local icon = get_alert_icon(status)
+    local message = { "", "Temporary Alert: ", drill.name, " is ", status }
 
-    -- Initialize the global.temporary_alerts table if not present
+    -- Add custom alert
+    player.add_custom_alert(drill.entity, icon, message, true)
+
+    -- Initialize tracking table
     global.temporary_alerts = global.temporary_alerts or {}
     global.temporary_alerts[player_index] = global.temporary_alerts[player_index] or {}
 
-    -- Use drill.unit_number as a unique key to prevent duplicates
     local unit_number = drill.entity.unit_number
     if not global.temporary_alerts[player_index][unit_number] then
         global.temporary_alerts[player_index][unit_number] = drill

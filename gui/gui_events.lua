@@ -16,7 +16,7 @@ script.on_event(defines.events.on_gui_hover, function(event)
     if resource and status and surface and drill_type then
         local drills = drill_utils.search_drills(resource, status, surface, drill_type)
         for _, drill in ipairs(drills) do
-            drill_utils.create_temporary_alert(event.player_index, drill)
+            drill_utils.create_temporary_alert(event.player_index, drill, status)
         end
     else
         player.print("[Drilly Mod] Error: Unable to parse button name correctly.")

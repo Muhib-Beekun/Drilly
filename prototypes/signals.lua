@@ -1,12 +1,18 @@
--- data.lua
+-- signals.lua
 
 data:extend({
+    {
+        type = "item-subgroup",
+        name = "drilly-alerts",
+        group = "signals",
+        order = "a[drilly-alerts]",
+    },
     -- Green Alert Icon
     {
         type = "fluid",
         name = "drilly-green-alert",
-        icon = "__drilly__/graphics/icons/drilly-green-alert.png",
-        icon_size = 64,
+        icon = "__drilly__/graphics/icons/drilly_green_alert.png",
+        icon_size = 128,
         icon_mipmaps = 0,
         default_temperature = 15,
         max_temperature = 100,
@@ -23,8 +29,8 @@ data:extend({
     {
         type = "fluid",
         name = "drilly-yellow-alert",
-        icon = "__drilly__/graphics/icons/drilly-yellow-alert.png",
-        icon_size = 64,
+        icon = "__drilly__/graphics/icons/drilly_yellow_alert.png",
+        icon_size = 128,
         icon_mipmaps = 0,
         default_temperature = 15,
         max_temperature = 100,
@@ -41,8 +47,8 @@ data:extend({
     {
         type = "fluid",
         name = "drilly-red-alert",
-        icon = "__drilly__/graphics/icons/drilly-red-alert.png",
-        icon_size = 64,
+        icon = "__drilly__/graphics/icons/drilly_red_alert.png",
+        icon_size = 128,
         icon_mipmaps = 0,
         default_temperature = 15,
         max_temperature = 100,
