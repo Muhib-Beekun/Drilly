@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.1.1
+Date: 2024-10-15
+  Bugfixes:
+    - Resolved Issue with FLIB Mod Conflict on Hover
+    - Clarified Naming of all elements to be preceeded with "Drilly" to avoid conflicts
+    - Starting a savegame in any way or joining it in any way will now close the drilly GUI to prevent any conflicts with previous versions.
+---------------------------------------------------------------------------------------------------
 Version: 1.1.0
 Date: 2024-10-14
   Features:

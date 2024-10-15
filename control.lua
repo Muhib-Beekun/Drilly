@@ -13,8 +13,11 @@ local drill_utils = require("drill_utils")
 script.on_init(function()
     drill_utils.initialize_drills()
     for _, player in pairs(game.players) do
+        if player.gui.screen.drill_inspector_frame then
+            player.gui.screen.drill_inspector_frame.destroy()
+        end
         drilly_button.create_drilly_button_if_needed(player)
-        gui.update_surface_dropdown(player)
+        gui.update_drilly_surface_dropdown(player)
     end
 end)
 
@@ -22,8 +25,11 @@ end)
 script.on_configuration_changed(function(event)
     drill_utils.initialize_drills()
     for _, player in pairs(game.players) do
+        if player.gui.screen.drill_inspector_frame then
+            player.gui.screen.drill_inspector_frame.destroy()
+        end
         drilly_button.create_drilly_button_if_needed(player)
-        gui.update_surface_dropdown(player)
+        gui.update_drilly_surface_dropdown(player)
     end
 end)
 
@@ -31,8 +37,11 @@ end)
 script.on_event(defines.events.on_player_joined_game, function(event)
     drill_utils.initialize_drills()
     local player = game.get_player(event.player_index)
+    if player.gui.screen.drill_inspector_frame then
+        player.gui.screen.drill_inspector_frame.destroy()
+    end
     drilly_button.create_drilly_button_if_needed(player)
-    gui.update_surface_dropdown(player)
+    gui.update_drilly_surface_dropdown(player)
 end
 )
 
@@ -40,7 +49,10 @@ script.on_event(defines.events.on_player_created, function(event)
     drill_utils.initialize_drills()
     local player = game.get_player(event.player_index)
     if player then
+        if player.gui.screen.drill_inspector_frame then
+            player.gui.screen.drill_inspector_frame.destroy()
+        end
         drilly_button.create_drilly_button_if_needed(player)
-        gui.update_surface_dropdown(player)
+        gui.update_drilly_surface_dropdown(player)
     end
 end)

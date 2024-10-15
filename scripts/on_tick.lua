@@ -57,7 +57,7 @@ script.on_event(defines.events.on_tick, function(event)
         for _, player in pairs(game.connected_players) do
             if player.gui.screen.drill_inspector_frame then
                 gui.update_drill_count(player)
-                gui.update_surface_dropdown(player)
+                gui.update_drilly_surface_dropdown(player)
                 gui.update_progress_bar(player, global.drill_processing_index - 1, total_drills)
             end
         end

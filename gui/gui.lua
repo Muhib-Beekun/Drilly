@@ -93,15 +93,15 @@ function gui.create_gui(player)
     }
 
     -- Add surface dropdown with an "All" option and default to the current surface
-    local surface_dropdown = header_flow.add {
+    local drilly_surface_dropdown = header_flow.add {
         type = "drop-down",
-        name = "surface_dropdown",
+        name = "drilly_surface_dropdown",
         items = { "By Surface", "Aggregate" },
         selected_index = 1,
         style = "dropdown",
     }
-    surface_dropdown.style.width = 150
-    surface_dropdown.style.height = 30
+    drilly_surface_dropdown.style.width = 150
+    drilly_surface_dropdown.style.height = 30
 
 
     -- Add time period toggle button
@@ -121,21 +121,21 @@ function gui.create_gui(player)
 
 
     -- Add a green refresh icon button next to the dropdown
-    local refresh_button = header_flow.add {
+    local drilly_refresh_button = header_flow.add {
         type = "sprite-button",
-        name = "refresh_button",
+        name = "drilly_refresh_button",
         sprite = "utility/refresh",
         tooltip = "Refresh",
         style = "green_button"
     }
-    refresh_button.style.width = 30
-    refresh_button.style.height = 30
-    refresh_button.style.padding = 2
+    drilly_refresh_button.style.width = 30
+    drilly_refresh_button.style.height = 30
+    drilly_refresh_button.style.padding = 2
 
     -- Add a close button
     local close_button = header_flow.add {
         type = "sprite-button",
-        name = "drill_close_button",
+        name = "drilly_close_button",
         sprite = "utility/close_fat", -- Close button to hide Drilly
         tooltip = "Close Drilly",
         style = "red_button"
@@ -173,8 +173,13 @@ function gui.update_drill_count(player)
     end
 
     local header_flow = main_frame.header_flow
-    local surface_dropdown = header_flow.surface_dropdown
-    local selected_option = surface_dropdown.get_item(surface_dropdown.selected_index)
+    local drilly_surface_dropdown = header_flow.drilly_surface_dropdown
+    if not drilly_surface_dropdown then
+        main_frame.destroy()
+        return
+    end
+
+    local selected_option = drilly_surface_dropdown.get_item(drilly_surface_dropdown.selected_index)
 
     local resource_flow = main_frame.resource_flow
     resource_flow.clear()
@@ -371,14 +376,14 @@ function gui.update_progress_bar(player, current_index, total_drills)
     end
 end
 
-function gui.update_surface_dropdown(player)
+function gui.update_drilly_surface_dropdown(player)
     local main_frame = player.gui.screen.drill_inspector_frame
     if not main_frame then
         return
     end
     local header_flow = main_frame.header_flow
-    local surface_dropdown = header_flow.surface_dropdown
-    if not surface_dropdown then
+    local drilly_surface_dropdown = header_flow.drilly_surface_dropdown
+    if not drilly_surface_dropdown then
         player.print("[Drilly Mod] Error: Drilly surface dropdown not found.")
         return
     end
@@ -415,7 +420,7 @@ function gui.update_surface_dropdown(player)
     end
 
     -- Get the current items in the dropdown
-    local current_items = surface_dropdown.items
+    local current_items = drilly_surface_dropdown.items
 
     -- Build a map of current items for quick lookup
     local current_items_map = {}
@@ -433,7 +438,7 @@ function gui.update_surface_dropdown(player)
     for index, item in ipairs(desired_items) do
         if not current_items_map[item] then
             -- Item is not in the current dropdown, add it at the correct index
-            surface_dropdown.add_item(item, index)
+            drilly_surface_dropdown.add_item(item, index)
             current_items_map[item] = index
         end
     end
@@ -444,29 +449,29 @@ function gui.update_surface_dropdown(player)
         local item = current_items[index]
         if not desired_items_map[item] and item ~= "By Surface" and item ~= "Aggregate" then
             -- Remove the item
-            surface_dropdown.remove_item(index)
+            drilly_surface_dropdown.remove_item(index)
             current_items_map[item] = nil
         end
     end
 
     -- Ensure the order of items matches the desired order
     for desired_index, desired_item in ipairs(desired_items) do
-        local current_item = surface_dropdown.get_item(desired_index)
+        local current_item = drilly_surface_dropdown.get_item(desired_index)
         if current_item ~= desired_item then
             -- Update the item at this index
-            surface_dropdown.set_item(desired_index, desired_item)
+            drilly_surface_dropdown.set_item(desired_index, desired_item)
         end
     end
 
     -- Update the selected index if necessary
-    local selected_index = surface_dropdown.selected_index
-    local selected_item = surface_dropdown.get_item(selected_index)
+    local selected_index = drilly_surface_dropdown.selected_index
+    local selected_item = drilly_surface_dropdown.get_item(selected_index)
 
     if not desired_items_map[selected_item] then
         -- Selected item has been removed, set selection to "By Surface"
-        for index, item in ipairs(surface_dropdown.items) do
+        for index, item in ipairs(drilly_surface_dropdown.items) do
             if item == "By Surface" then
-                surface_dropdown.selected_index = index
+                drilly_surface_dropdown.selected_index = index
                 break
             end
         end

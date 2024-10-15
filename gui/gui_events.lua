@@ -5,9 +5,10 @@ local drill_utils = require("drill_utils")
 
 -- Event handler for GUI hover
 script.on_event(defines.events.on_gui_hover, function(event)
-    local player = game.get_player(event.player_index)
     local element = event.element
     if not element then return end
+    if not string.find(event.element.name, "^drilly_") then return end
+    local player = game.get_player(event.player_index)
 
     -- Pattern matching with updated separator (hyphen)
     local resource, status, surface, drill_type = string.match(event.element.name,
@@ -24,9 +25,10 @@ end)
 
 -- Event handler for GUI leave
 script.on_event(defines.events.on_gui_leave, function(event)
-    local player = game.get_player(event.player_index)
     local element = event.element
     if not element then return end
+    if not string.find(event.element.name, "^drilly_") then return end
+    local player = game.get_player(event.player_index)
 
     -- Pattern matching with updated separator (hyphen)
     local resource, status, surface, drill_type = string.match(event.element.name,
@@ -46,17 +48,20 @@ end)
 
 -- Function to handle GUI clicks (for both refresh and close buttons)
 script.on_event(defines.events.on_gui_click, function(event)
+    local element = event.element
+    if not element then return end
+    if not string.find(event.element.name, "^drilly_") then return end
     local player = game.get_player(event.player_index)
     if player then
         -- Check if the clicked element is valid
         if event.element and event.element.valid then
             -- Handle refresh button click
-            if event.element.name == "refresh_button" then
+            if event.element.name == "drilly_refresh_button" then
                 global.force_update = true
                 global.drill_processing_index = 1
 
                 -- Handle close button click
-            elseif event.element.name == "drill_close_button" then
+            elseif event.element.name == "drilly_close_button" then
                 if player.gui.screen.drill_inspector_frame then
                     player.gui.screen.drill_inspector_frame.destroy()
                 end
@@ -152,9 +157,11 @@ end)
 
 script.on_event(defines.events.on_gui_selection_state_changed, function(event)
     local element = event.element
+    if not element then return end
+    if not string.find(event.element.name, "^drilly_") then return end
     local player = game.get_player(event.player_index)
 
-    if element and element.valid and element.name == "surface_dropdown" then
+    if element and element.valid and element.name == "drilly_surface_dropdown" then
         gui.update_drill_count(player)
     end
 end)
