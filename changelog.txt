@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.1
 Date: 2024-10-15
+  Features:
+    - Added custom icons for each status
   Bugfixes:
     - Resolved Issue with FLIB Mod Conflict on Hover
     - Clarified Naming of all elements to be preceeded with "Drilly" to avoid conflicts
