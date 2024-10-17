@@ -286,6 +286,25 @@ function gui.update_drill_count(player)
     end
 end
 
+function gui.is_progress_bar_enabled(player)
+    local main_frame = player.gui.screen.drill_inspector_frame
+    if not main_frame then
+        return false
+    end
+
+    local progress_flow = main_frame.progress_flow
+    if not progress_flow then
+        return false
+    end
+
+    local progress_bar = progress_flow.drill_progress_bar
+    if not progress_bar then
+        return false
+    end
+
+    return true
+end
+
 -- Function to update the progress bar
 function gui.update_progress_bar(player, current_index, total_drills)
     local main_frame = player.gui.screen.drill_inspector_frame

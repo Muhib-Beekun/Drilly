@@ -26,6 +26,14 @@ data:extend({
     },
     {
         type = "int-setting",
+        name = "drilly-max-drills-per-tick",
+        setting_type = "runtime-global",
+        default_value = 10,
+        minimum_value = 1,
+        order = "d"
+    },
+    {
+        type = "int-setting",
         name = "drilly-current-period-index",
         setting_type = "runtime-per-user",
         default_value = 1,
