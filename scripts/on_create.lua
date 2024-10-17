@@ -1,11 +1,11 @@
-local drill_utils = require("drill_utils")
+local drill_manager = require("scripts.drills.drill_manager")
 
 -- Handle when a drill is built bu player
 script.on_event(defines.events.on_built_entity,
     function(event)
         local entity = event.created_entity
         if entity and entity.valid and entity.type == "mining-drill" then
-            drill_utils.add_drill(entity)
+            drill_manager.add_drill(entity)
         end
     end
 )
@@ -14,7 +14,7 @@ script.on_event(defines.events.on_robot_built_entity,
     function(event)
         local entity = event.created_entity
         if entity and entity.valid and entity.type == "mining-drill" then
-            drill_utils.add_drill(entity)
+            drill_manager.add_drill(entity)
         end
     end
 )

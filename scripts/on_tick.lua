@@ -1,16 +1,16 @@
-local drill_utils = require("drill_utils")
 local gui = require("gui.gui")
+local drill_manager = require("scripts.drills.drill_manager")
 
 script.on_event(defines.events.on_tick, function(event)
     if not global.drills then
         game.print("[Drilly Mod] Warning: global.minable_entities not initialized at tick time. Initializing now.")
-        drill_utils.initialize_drills()
+        drill_manager.initialize_drills()
     end
 
     local total_drills = #global.drill_unit_numbers
     if total_drills == 0 then
         -- Empty drills list, prompt a full refresh
-        drill_utils.initialize_drills()
+        drill_manager.initialize_drills()
         total_drills = #global.drill_unit_numbers
         if total_drills == 0 then
             return -- No drills to process
@@ -46,7 +46,7 @@ script.on_event(defines.events.on_tick, function(event)
         local unit_number = global.drill_unit_numbers[index]
         local drill_data = global.drills[unit_number]
         if drill_data then
-            drill_utils.update_drill_data(drill_data)
+            drill_manager.update_drill_data(drill_data)
         end
 
         global.drill_processing_index = global.drill_processing_index + 1

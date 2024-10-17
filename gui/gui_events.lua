@@ -1,7 +1,8 @@
 --gui_events.lua
 
 local gui = require("gui.gui")
-local drill_utils = require("drill_utils")
+local drill_manager = require("scripts.drills.drill_manager")
+local alert_manager = require("scripts.alerts.alert_manager")
 
 -- Event handler for GUI hover
 script.on_event(defines.events.on_gui_hover, function(event)
@@ -14,9 +15,9 @@ script.on_event(defines.events.on_gui_hover, function(event)
     local resource, status, surface, drill_type = string.match(event.element.name,
         "drilly_([^_]+)_([^_]+)_([^_]+)_([^_]+)")
     if resource and status and surface and drill_type then
-        local drills = drill_utils.search_drills(resource, status, surface, drill_type)
+        local drills = drill_manager.search_drills(resource, status, surface, drill_type)
         for _, drill in ipairs(drills) do
-            drill_utils.create_temporary_alert(event.player_index, drill, status)
+            alert_manager.create_temporary_alert(event.player_index, drill, status)
         end
     else
         player.print("[Drilly Mod] Error: Unable to parse button name correctly.")
@@ -38,7 +39,7 @@ script.on_event(defines.events.on_gui_leave, function(event)
         local player_alerts = global.temporary_alerts and global.temporary_alerts[event.player_index]
         if player_alerts then
             for _, drill in pairs(player_alerts) do
-                drill_utils.remove_temporary_alert(event.player_index, drill)
+                alert_manager.remove_temporary_alert(event.player_index, drill)
             end
         end
     else
@@ -88,7 +89,7 @@ script.on_event(defines.events.on_gui_click, function(event)
                 if not (resource and status and surface and drill_type) then return end
 
                 -- Fetch drills matching the criteria
-                local drills = drill_utils.search_drills(resource, status, surface, drill_type)
+                local drills = drill_manager.search_drills(resource, status, surface, drill_type)
 
                 global.player_data[player.index] = global.player_data[player.index] or {}
 

@@ -1,44 +1,8 @@
 --gui.lua
 
-local drill_utils = require("drill_utils")
-
 local gui = {}
 
--- Utility: Format numbers with commas
-local function format_number_with_commas(number)
-    -- Convert the number to string to analyze its decimal part
-    local formatted = tostring(number)
-
-    -- Separate integer and decimal parts (if any)
-    local integer_part, decimal_part = string.match(formatted, "(%-?%d+)(%.%d+)")
-
-    -- Check if the number has a decimal part
-    if decimal_part then
-        -- Check the length of the decimal part (excluding the decimal point)
-        local decimal_digits = string.sub(decimal_part, 2)
-        if #decimal_digits > 4 then
-            -- Round the number to 4 decimal places
-            formatted = string.format("%.4f", number)
-            -- Update the integer and decimal parts after rounding
-            integer_part, decimal_part = string.match(formatted, "(%-?%d+)(%.%d+)")
-        end
-    else
-        -- No decimal part, use the integer part as is
-        integer_part = formatted
-        decimal_part = ""
-    end
-
-    -- Insert commas into the integer part
-    local k
-    local formatted_int = integer_part
-    while true do
-        formatted_int, k = string.gsub(formatted_int, "^(-?%d+)(%d%d%d)", '%1,%2')
-        if k == 0 then break end
-    end
-
-    -- Reconstruct the formatted number
-    return formatted_int .. (decimal_part or "")
-end
+local utility_functions = require("scripts.utils.utility_functions")
 
 
 
@@ -284,7 +248,7 @@ function gui.update_drill_count(player)
 
             -- Format the total amount
             local amount_number = tonumber(string.format("%.4f", data.total_amount))
-            local formatted_amount = format_number_with_commas(amount_number)
+            local formatted_amount = utility_functions.format_number_with_commas(amount_number)
 
             -- Add the resource button
             resource_line.add {
@@ -302,7 +266,7 @@ function gui.update_drill_count(player)
                     local status_name = get_status_name(status)
 
                     local display_value = tonumber(string.format("%.4f", value))
-                    local formatted_value = format_number_with_commas(display_value)
+                    local formatted_value = utility_functions.format_number_with_commas(display_value)
                     local tooltip_suffix = display_interval == "total" and "" or " per " .. display_interval
 
                     local button_name = string.format("drilly_%s_%s_%s_%s", resource_name, status, key, drill_type)

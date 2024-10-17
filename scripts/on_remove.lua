@@ -1,13 +1,13 @@
 --on_remove.lua
 
-local drill_utils = require("drill_utils")
+local drill_manager = require("scripts.drills.drill_manager")
 
 -- Handle when a drill is removed
 script.on_event(defines.events.on_robot_mined_entity,
     function(event)
         local entity = event.entity
         if entity and entity.valid and entity.type == "mining-drill" then
-            drill_utils.remove_drill(entity)
+            drill_manager.remove_drill(entity)
         end
         if entity and entity.valid and entity.type == "resource" then
             local resource_key = (entity.surface.index .. "_" .. entity.position.x .. "_" .. entity.position.y)
@@ -22,7 +22,7 @@ script.on_event(
     function(event)
         local entity = event.entity
         if entity and entity.valid and entity.type == "mining-drill" then
-            drill_utils.remove_drill(entity)
+            drill_manager.remove_drill(entity)
         end
         if entity and entity.valid and entity.type == "resource" then
             local resource_key = (entity.surface.index .. "_" .. entity.position.x .. "_" .. entity.position.y)
@@ -37,7 +37,7 @@ script.on_event(
     function(event)
         local entity = event.entity
         if entity and entity.valid and entity.type == "mining-drill" then
-            drill_utils.remove_drill(entity)
+            drill_manager.remove_drill(entity)
         end
         if entity and entity.valid and entity.type == "resource" then
             local resource_key = (entity.surface.index .. "_" .. entity.position.x .. "_" .. entity.position.y)
