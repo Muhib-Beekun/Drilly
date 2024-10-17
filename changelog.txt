@@ -1,4 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.1.2
+Date: 2024-10-16
+  Changes:
+    - Refactored and organized scripts
+    - Tick optimizations
+      - Delayed surface refresh to every 5 minutes (On Drill Create is instant)
+      - Added Max drills per tick setting to cap refresh UPS consumption
+      - Drills will now only refresh up to the set limit each tick to spread out the workload
+    - Updated Localizations
+---------------------------------------------------------------------------------------------------
 Version: 1.1.1
 Date: 2024-10-15
   Features:
