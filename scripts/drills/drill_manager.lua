@@ -37,7 +37,6 @@ function drill_manager.initialize_drills()
     end
 end
 
--- Function to add a drill to global.drills
 function drill_manager.add_drill(drill)
     local drill_data = {
         entity = drill,
@@ -52,6 +51,48 @@ function drill_manager.add_drill(drill)
     }
     global.drills[drill.unit_number] = drill_data
     table.insert(global.drill_unit_numbers, drill.unit_number)
+
+    local new_surface_name = drill.surface.name
+
+    -- Update the drilly_surface_dropdown for each player
+    for _, player in pairs(game.players) do
+        local main_frame = player.gui.screen.drill_inspector_frame
+        if main_frame then
+            local header_flow = main_frame.header_flow
+            local drilly_surface_dropdown = header_flow.drilly_surface_dropdown
+            if drilly_surface_dropdown then
+                local current_items = drilly_surface_dropdown.items
+                -- Check if the new surface is already in the dropdown
+                local surface_exists = false
+                for _, item in ipairs(current_items) do
+                    if item == new_surface_name then
+                        surface_exists = true
+                        break
+                    end
+                end
+                if not surface_exists then
+                    -- Append the new surface to the list
+                    table.insert(current_items, new_surface_name)
+                    -- Extract the first two special items
+                    local special_items = { current_items[1], current_items[2] } -- "By Surface" and "Aggregate"
+                    -- Collect the surface names from the dropdown
+                    local surface_items = {}
+                    for i = 3, #current_items do
+                        table.insert(surface_items, current_items[i])
+                    end
+                    -- Sort the surface names alphabetically
+                    table.sort(surface_items)
+                    -- Recombine the lists
+                    local updated_items = special_items
+                    for _, surface_name in ipairs(surface_items) do
+                        table.insert(updated_items, surface_name)
+                    end
+                    -- Update the dropdown items
+                    drilly_surface_dropdown.items = updated_items
+                end
+            end
+        end
+    end
 
     local resource_entities = resource_manager.get_resource_entities(drill)
 
