@@ -102,6 +102,7 @@ end
 
 -- Function to remove a drill from global.drills
 function drill_manager.remove_drill(drill)
+    if not drill then return end
     global.drills[drill.unit_number] = nil
     -- Remove from unit_numbers list
     for i, unit_number in ipairs(global.drill_unit_numbers) do
