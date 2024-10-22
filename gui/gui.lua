@@ -154,10 +154,10 @@ function gui.update_drill_count(player)
     local time_button = main_frame.header_flow.drilly_time_toggle_button
     time_button.tooltip = "Toggle time period (Current: " .. display_interval .. ")"
 
-    -- Aggregate data from global.drills
+    -- Aggregate data from storage.drills
     local resource_data = {}
 
-    for _, drill_data in pairs(global.drills) do
+    for _, drill_data in pairs(storage.drills) do
         local drill = drill_data.entity
         if not (drill and drill.valid) then
             goto continue
@@ -243,7 +243,7 @@ function gui.update_drill_count(player)
 
         for resource_name, data in pairs(resources) do
             local resource_line = resource_flow.add { type = "flow", direction = "horizontal" }
-            local sprite_type = game.item_prototypes[resource_name] and "item" or "entity"
+            local sprite_type = prototypes.item[resource_name] and "item" or "entity"
             local sprite = sprite_type .. "/" .. resource_name
 
             -- Format the total amount
@@ -320,7 +320,7 @@ function gui.update_progress_bar(player, current_index, total_drills)
     local progress_bar = progress_flow.drill_progress_bar
     local progress_label = progress_flow.drill_progress_label
 
-    if not progress_bar and global.force_update then
+    if not progress_bar and storage.force_update then
         progress_bar = progress_flow.add {
             type = "progressbar",
             name = "drill_progress_bar",
@@ -330,7 +330,7 @@ function gui.update_progress_bar(player, current_index, total_drills)
         progress_bar.style.width = 200
     end
 
-    if not progress_label and global.force_update then
+    if not progress_label and storage.force_update then
         progress_label = progress_flow.add {
             type = "label",
             name = "drill_progress_label",
@@ -339,15 +339,15 @@ function gui.update_progress_bar(player, current_index, total_drills)
         progress_label.style.left_margin = 10
     end
 
-    if progress_label and not global.force_update then
+    if progress_label and not storage.force_update then
         progress_label.destroy()
     end
 
-    if progress_bar and not global.force_update then
+    if progress_bar and not storage.force_update then
         progress_bar.destroy()
     end
 
-    if not global.force_update then
+    if not storage.force_update then
         return
     end
 
@@ -376,7 +376,7 @@ function gui.update_drilly_surface_dropdown(player)
 
     -- Build the set of surfaces with drills
     local surfaces_with_drills = {}
-    for _, drill_data in pairs(global.drills) do
+    for _, drill_data in pairs(storage.drills) do
         local surface_index = drill_data.surface_index
         local surface = game.surfaces[surface_index]
         if surface then

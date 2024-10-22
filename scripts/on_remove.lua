@@ -11,7 +11,7 @@ script.on_event(defines.events.on_robot_mined_entity,
         end
         if entity and entity.valid and entity.type == "resource" then
             local resource_key = (entity.surface.index .. "_" .. entity.position.x .. "_" .. entity.position.y)
-            global.minable_entities[resource_key] = nil
+            storage.minable_entities[resource_key] = nil
         end
     end
 )
@@ -26,7 +26,7 @@ script.on_event(
         end
         if entity and entity.valid and entity.type == "resource" then
             local resource_key = (entity.surface.index .. "_" .. entity.position.x .. "_" .. entity.position.y)
-            global.minable_entities[resource_key] = nil
+            storage.minable_entities[resource_key] = nil
         end
     end
 )
@@ -41,7 +41,7 @@ script.on_event(
         end
         if entity and entity.valid and entity.type == "resource" then
             local resource_key = (entity.surface.index .. "_" .. entity.position.x .. "_" .. entity.position.y)
-            global.minable_entities[resource_key] = nil
+            storage.minable_entities[resource_key] = nil
         end
     end
 )

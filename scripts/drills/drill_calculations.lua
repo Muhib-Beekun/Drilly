@@ -1,6 +1,5 @@
 local drill_calculations = {}
 
-
 -- Function to calculate yield per second for regular miners
 function drill_calculations.calculate_regular_miner_yield(drill, resource)
     local resource_prototype = resource.prototype
@@ -20,10 +19,8 @@ function drill_calculations.calculate_regular_miner_yield(drill, resource)
     local actual_mining_speed = base_mining_speed * (1 + speed_bonus)
 
     -- Apply productivity bonuses
-    local base_productivity = drill.prototype.base_productivity or 0
     local productivity_bonus = drill.productivity_bonus or 0
-    local effective_productivity = 1 + base_productivity + productivity_bonus
-
+    local effective_productivity = 1 + productivity_bonus
 
     local yield_per_second = 0
 
@@ -56,11 +53,11 @@ function drill_calculations.calculate_core_miner_yield(drill, resource)
     local force = drill.force
 
     -- Initialize per-surface cache if not present
-    if not global.surface_data[surface_index] then
-        global.surface_data[surface_index] = {}
+    if not storage.surface_data[surface_index] then
+        storage.surface_data[surface_index] = {}
     end
 
-    local surface_cache = global.surface_data[surface_index]
+    local surface_cache = storage.surface_data[surface_index]
 
     -- Update core miner efficiency if needed
     if not surface_cache.core_miner_efficiency or game.tick > (surface_cache.core_miner_efficiency_updated_tick or 0) + 600 then
@@ -109,9 +106,8 @@ function drill_calculations.calculate_core_miner_yield(drill, resource)
     local actual_mining_speed = base_mining_speed * (1 + speed_bonus)
 
     -- Apply productivity bonuses
-    local base_productivity = drill.prototype.base_productivity or 0
     local productivity_bonus = drill.productivity_bonus or 0
-    local effective_productivity = 1 + base_productivity + productivity_bonus
+    local effective_productivity = 1 + productivity_bonus
 
     -- Calculate yield per second
     local base_mining_rate = actual_mining_speed / mining_time

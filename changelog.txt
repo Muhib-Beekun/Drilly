@@ -1,4 +1,16 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.0.0
+Date: 2024-10-21
+  Changes:
+    - Factorio 2.0 Compatibility:
+      - Updated the mod to be fully compatible with Factorio 2.0 API changes.
+      - Replaced all instances of the deprecated global with storage for persistent data management.
+      - Migrated prototype accesses (e.g., game.item_prototypes) to the new prototypes API.
+      - Tweaked prototype signals to new API
+      - Changed OnEvent Create handlers to new API
+      - Replaced the deprecated zoom_to_world function with the new set_controller API to handle drill zoom-ins
+      - Replaced create_entity('flying-text') with create_local_flying_text
+---------------------------------------------------------------------------------------------------
 Version: 1.1.3
 Date: 2024-10-20
   Bugfixes:

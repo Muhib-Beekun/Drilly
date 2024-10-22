@@ -30,12 +30,12 @@ function alert_manager.create_temporary_alert(player_index, drill, status)
     player.add_custom_alert(drill.entity, icon, message, true)
 
     -- Initialize tracking table
-    global.temporary_alerts = global.temporary_alerts or {}
-    global.temporary_alerts[player_index] = global.temporary_alerts[player_index] or {}
+    storage.temporary_alerts = storage.temporary_alerts or {}
+    storage.temporary_alerts[player_index] = storage.temporary_alerts[player_index] or {}
 
     local unit_number = drill.entity.unit_number
-    if not global.temporary_alerts[player_index][unit_number] then
-        global.temporary_alerts[player_index][unit_number] = drill
+    if not storage.temporary_alerts[player_index][unit_number] then
+        storage.temporary_alerts[player_index][unit_number] = drill
     end
 end
 
@@ -44,17 +44,17 @@ function alert_manager.remove_temporary_alert(player_index, drill)
     local player = game.get_player(player_index)
     if not drill or not drill.entity.valid then return end
 
-    -- Initialize the global.temporary_alerts table if not present
-    global.temporary_alerts = global.temporary_alerts or {}
-    global.temporary_alerts[player_index] = global.temporary_alerts[player_index] or {}
+    -- Initialize the storage.temporary_alerts table if not present
+    storage.temporary_alerts = storage.temporary_alerts or {}
+    storage.temporary_alerts[player_index] = storage.temporary_alerts[player_index] or {}
 
     local unit_number = drill.entity.unit_number
-    if global.temporary_alerts[player_index][unit_number] then
+    if storage.temporary_alerts[player_index][unit_number] then
         -- Remove the alert from the player
         player.remove_alert({ entity = drill.entity })
 
         -- Remove the drill from the tracking table
-        global.temporary_alerts[player_index][unit_number] = nil
+        storage.temporary_alerts[player_index][unit_number] = nil
     end
 end
 

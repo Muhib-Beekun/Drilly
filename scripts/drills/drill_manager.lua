@@ -5,31 +5,34 @@ local drill_calculations = require("scripts.drills.drill_calculations")
 
 local drill_manager = {}
 
--- Initialize the global tables
+-- Initialize the storage tables
 function drill_manager.initialize_drills()
-    global.drills = global.drills or {}
-    global.drill_unit_numbers = global.drill_unit_numbers or {}
-    global.drill_processing_index = 1                                                 -- Force restart of drill processing loop
-    global.force_update = true                                                        -- Force restart of drill processing loop
-    global.surface_data = global.surface_data or {}                                   -- For caching per-surface data
-    global.minable_entities = global.minable_entities or
-        {}                                                                            -- Initialize global minable entities table
-    global.temporary_alerts = global.temporary_alerts or {}                           -- Initialize temporary alerts
-    global.player_data = global.player_data or {}                                     -- initialize Player Data
+    if not storage then
+        storage = {}
+    end
+    storage.drills = storage.drills or {}
+    storage.drill_unit_numbers = storage.drill_unit_numbers or {}
+    storage.drill_processing_index = 1                                                  -- Force restart of drill processing loop
+    storage.force_update = true                                                         -- Force restart of drill processing loop
+    storage.surface_data = storage.surface_data or {}                                   -- For caching per-surface data
+    storage.minable_entities = storage.minable_entities or
+        {}                                                                              -- Initialize global minable entities table
+    storage.temporary_alerts = storage.temporary_alerts or {}                           -- Initialize temporary alerts
+    storage.player_data = storage.player_data or {}                                     -- initialize Player Data
     for _, surface in pairs(game.surfaces) do
-        global.surface_data[surface.index] = global.surface_data[surface.index] or {} -- Initialize per-surface data
+        storage.surface_data[surface.index] = storage.surface_data[surface.index] or {} -- Initialize per-surface data
 
         local drills = surface.find_entities_filtered { type = "mining-drill", force = game.forces.player }
 
         for _, drill in pairs(drills) do
-            if drill.valid and not global.drills[drill.unit_number] then
+            if drill.valid and not storage.drills[drill.unit_number] then
                 drill_manager.add_drill(drill)
             end
         end
     end
 
     -- Remove drills that no longer exist
-    for _, drill_data in pairs(global.drills) do
+    for _, drill_data in pairs(storage.drills) do
         local drill = drill_data.entity
         if not (drill and drill.valid) then
             drill_manager.remove_drill(drill)
@@ -49,8 +52,8 @@ function drill_manager.add_drill(drill)
         status = drill.status,
         last_updated_tick = game.tick,
     }
-    global.drills[drill.unit_number] = drill_data
-    table.insert(global.drill_unit_numbers, drill.unit_number)
+    storage.drills[drill.unit_number] = drill_data
+    table.insert(storage.drill_unit_numbers, drill.unit_number)
 
     local new_surface_name = drill.surface.name
 
@@ -100,27 +103,28 @@ function drill_manager.add_drill(drill)
     resource_manager.update_minable_entities_for_drill(drill, true, resource_entities)
 end
 
--- Function to remove a drill from global.drills
+-- Function to remove a drill from storage.drills
 function drill_manager.remove_drill(drill)
     if not drill then return end
-    global.drills[drill.unit_number] = nil
+    storage.drills[drill.unit_number] = nil
     -- Remove from unit_numbers list
-    for i, unit_number in ipairs(global.drill_unit_numbers) do
+    for i, unit_number in ipairs(storage.drill_unit_numbers) do
         if unit_number == drill.unit_number then
-            table.remove(global.drill_unit_numbers, i)
+            table.remove(storage.drill_unit_numbers, i)
             break
         end
     end
     local resource_entities = resource_manager.get_resource_entities(drill)
 
-    -- Update global.minable_entities to remove the drill from any resource entities it covers
+    -- Update storage.minable_entities to remove the drill from any resource entities it covers
     resource_manager.update_minable_entities_for_drill(drill, false, resource_entities)
 end
 
 -- Function to update a single drill's data
 function drill_manager.update_drill_data(drill_data)
-    if not global.minable_entities then
-        game.print("[Drilly Mod] Warning: global.minable_entities not initialized at UpdateDrillData. Initializing now.")
+    if not storage.minable_entities then
+        game.print(
+            "[Drilly Mod] Warning: storage.minable_entities not initialized at UpdateDrillData. Initializing now.")
         drill_manager.initialize_drills()
     end
 
@@ -137,7 +141,7 @@ function drill_manager.update_drill_data(drill_data)
     -- Determine if an update is necessary
     local needs_update = false
 
-    if global.force_update then
+    if storage.force_update then
         needs_update = true
     elseif current_status == defines.entity_status.working then
         needs_update = true
@@ -157,9 +161,8 @@ function drill_manager.update_drill_data(drill_data)
     drill_data.status = drill.status
 
     -- Update productivity bonus
-    local base_productivity = drill.prototype.base_productivity or 0
     local productivity_bonus = drill.productivity_bonus or 0
-    drill_data.productivity_bonus = 1 + base_productivity + productivity_bonus
+    drill_data.productivity_bonus = 1 + productivity_bonus
 
     -- Get the list of resource entities covered by this drill
     local resource_entities = resource_manager.get_resource_entities(drill)
@@ -216,11 +219,11 @@ function drill_manager.update_drill_data(drill_data)
         local total_amount = 0
         for _, resource in pairs(resources) do
             local resource_key = (resource.surface.index .. "_" .. resource.position.x .. "_" .. resource.position.y)
-            if not global.minable_entities[resource_key] then
+            if not storage.minable_entities[resource_key] then
                 resource_manager.update_minable_entities_for_drill(drill, true, resource_entities)
             end
-            local drills_covering = global.minable_entities[resource_key] and
-                global.minable_entities[resource_key].drills or {}
+            local drills_covering = storage.minable_entities[resource_key] and
+                storage.minable_entities[resource_key].drills or {}
             local num_drills_covering = 0
             for _ in pairs(drills_covering) do
                 num_drills_covering = num_drills_covering + 1
@@ -247,7 +250,7 @@ end
 function drill_manager.search_drills(resource, status, surface, drill_type)
     local filtered_drills = {}
 
-    for _, drill in pairs(global.drills) do
+    for _, drill in pairs(storage.drills) do
         local drill_entity = drill.entity
         if drill_entity and drill_entity.valid then
             local drill_status = drill.status

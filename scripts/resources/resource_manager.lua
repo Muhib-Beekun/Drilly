@@ -7,8 +7,8 @@ function resource_manager.update_minable_entities_for_drill(drill, is_adding, re
     for _, resource in pairs(resource_entities) do
         if mining_categories[resource.prototype.resource_category] then
             local resource_key = (resource.surface.index .. "_" .. resource.position.x .. "_" .. resource.position.y)
-            if not global.minable_entities[resource_key] then
-                global.minable_entities[resource_key] = {
+            if not storage.minable_entities[resource_key] then
+                storage.minable_entities[resource_key] = {
                     entity = resource,
                     drills = {},
                 }
@@ -16,13 +16,13 @@ function resource_manager.update_minable_entities_for_drill(drill, is_adding, re
 
             if is_adding then
                 -- Add the drill to the list if not already present
-                global.minable_entities[resource_key].drills[drill.unit_number] = true
+                storage.minable_entities[resource_key].drills[drill.unit_number] = true
             else
                 -- Remove the drill from the list
-                global.minable_entities[resource_key].drills[drill.unit_number] = nil
+                storage.minable_entities[resource_key].drills[drill.unit_number] = nil
                 -- Clean up if no drills left
-                if not next(global.minable_entities[resource_key].drills) then
-                    global.minable_entities[resource_key] = nil
+                if not next(storage.minable_entities[resource_key].drills) then
+                    storage.minable_entities[resource_key] = nil
                 end
             end
         end
