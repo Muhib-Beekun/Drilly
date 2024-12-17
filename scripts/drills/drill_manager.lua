@@ -69,6 +69,12 @@ function drill_manager.add_drill(drill, update_ui)
     if not drill or not drill.valid then return end
     if storage.drills[drill.unit_number] then return end
 
+    -- Ensure storage tables are initialized
+    if not storage.pending_drill_updates then
+        storage.pending_drill_updates = {}
+    end
+
+    -- Create and store drill data
     local drill_data = {
         entity = drill,
         unit_number = drill.unit_number,
@@ -88,6 +94,15 @@ function drill_manager.add_drill(drill, update_ui)
     local resource_entities = resource_manager.get_resource_entities(drill)
     resource_manager.update_minable_entities_for_drill(drill, true, resource_entities)
 
+    -- Manually update the drill data immediately
+    drill_manager.update_drill_data(drill_data)
+
+    -- If status is "no power," queue for retry in upcoming ticks
+    if drill_data.status == defines.entity_status.no_power then
+        storage.pending_drill_updates[drill.unit_number] = { retries = 5 }
+    end
+
+    -- Refresh UI if needed
     if update_ui ~= false then
         drill_manager.refresh_ui()
     end
@@ -139,7 +154,7 @@ end
 function drill_manager.update_drill_data(drill_data)
     if not storage.minable_entities then
         game.print(
-        "[Drilly Mod] Warning: storage.minable_entities not initialized at UpdateDrillData. Initializing now.")
+            "[Drilly Mod] Warning: storage.minable_entities not initialized at UpdateDrillData. Initializing now.")
         drill_manager.initialize_drills()
     end
 

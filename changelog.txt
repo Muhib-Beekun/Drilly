@@ -4,6 +4,8 @@ Date: 2024-10-21
   Changes:
     - Minor formatting changes to some files.
     - Drill removal instantly updates UI
+    - Drill addition instantly updates UI
+    - Drill addition will recheck for power for 5 ticks
   Bugfixes:
     - Resolved race condition when no drills exist
 

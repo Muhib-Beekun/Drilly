@@ -13,6 +13,29 @@ script.on_event(defines.events.on_tick, function(event)
         drill_manager.initialize_drills()
     end
 
+    -- Retry pending drill updates
+    if storage.pending_drill_updates then
+        for unit_number, data in pairs(storage.pending_drill_updates) do
+            local drill_data = storage.drills[unit_number]
+            if drill_data and drill_data.entity and drill_data.entity.valid then
+                drill_manager.update_drill_data(drill_data)
+                -- Stop retrying if the drill status is no longer "no power"
+                if drill_data.status ~= defines.entity_status.no_power then
+                    storage.pending_drill_updates[unit_number] = nil
+                else
+                    -- Decrease retry count
+                    data.retries = data.retries - 1
+                    if data.retries <= 0 then
+                        storage.pending_drill_updates[unit_number] = nil
+                    end
+                end
+            else
+                -- Remove invalid drills
+                storage.pending_drill_updates[unit_number] = nil
+            end
+        end
+    end
+
     -- Count total drills
     local total_drills = #storage.drill_unit_numbers
 
