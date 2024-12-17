@@ -14,6 +14,8 @@
 
 - **Drill Alerts**: Hover over a drill to trigger an alert on the map, click a drill to zoom to its location.
 
+- **Auto Deconstruct**: Drills with no minable resources are automatically marked for deconstruction to streamline cleanup and resource management (Configurable Global Setting).
+
 - **Dynamic & Auto-Refresh**:
   - **Manual Refresh**: Use the "Refresh" button to update the displayed data on-demand.
   - **Configurable Auto-Refresh**: Set automatic update intervals in the mod settings to keep your data current without manual intervention.
