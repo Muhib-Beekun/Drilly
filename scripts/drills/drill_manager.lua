@@ -1,3 +1,4 @@
+-- drill_manager.lua
 local resource_manager = require("scripts.resources.resource_manager")
 local drill_calculations = require("scripts.drills.drill_calculations")
 
@@ -59,7 +60,7 @@ function drill_manager.add_drill(drill)
     -- Update the drilly_surface_dropdown for each player
     for _, player in pairs(game.players) do
         local main_frame = player.gui.screen.drill_inspector_frame
-        if main_frame then
+        if main_frame and main_frame.header_flow and main_frame.header_flow.drilly_surface_dropdown then
             local header_flow = main_frame.header_flow
             local drilly_surface_dropdown = header_flow.drilly_surface_dropdown
             if drilly_surface_dropdown then
