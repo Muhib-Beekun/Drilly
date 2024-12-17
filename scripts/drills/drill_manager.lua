@@ -181,7 +181,18 @@ function drill_manager.update_drill_data(drill_data)
         return
     end
 
+    -- Update status
     drill_data.status = current_status
+
+    -- Check for "no resources" and mark for deconstruction if setting is enabled
+    if current_status == defines.entity_status.no_minable_resources and
+        settings.global["drilly-auto-mark-deconstruction"].value then
+        if not drill.to_be_deconstructed() then
+            drill.order_deconstruction(drill.force)
+        end
+    end
+
+    -- Update productivity bonus
     local productivity_bonus = drill.productivity_bonus or 0
     drill_data.productivity_bonus = 1 + productivity_bonus
 

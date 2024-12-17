@@ -39,5 +39,12 @@ data:extend({
         default_value = 1,
         allowed_values = { 1, 2, 3, 4 },
         hidden = true
+    },
+    {
+        type = "bool-setting",
+        name = "drilly-auto-mark-deconstruction",
+        setting_type = "runtime-global",
+        default_value = true,
+        order = "e",
     }
 })
