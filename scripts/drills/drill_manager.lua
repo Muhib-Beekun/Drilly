@@ -1,7 +1,6 @@
 local resource_manager = require("scripts.resources.resource_manager")
 local drill_calculations = require("scripts.drills.drill_calculations")
 
--- drill_manager.lua
 
 local drill_manager = {}
 

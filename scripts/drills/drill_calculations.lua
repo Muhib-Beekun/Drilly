@@ -1,3 +1,5 @@
+--drill_calculations.lua
+
 local drill_calculations = {}
 
 -- Function to calculate yield per second for regular miners

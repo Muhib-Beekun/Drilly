@@ -1,3 +1,5 @@
+--on_create.lua
+
 local drill_manager = require("scripts.drills.drill_manager")
 
 -- Handle when a drill is built by the player
